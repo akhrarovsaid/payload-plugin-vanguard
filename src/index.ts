@@ -1,6 +1,6 @@
 import type { CollectionSlug, Config } from 'payload'
 
-export type Config = {
+export type VanguardPluginConfig = {
   /**
    * List of collections to add a custom field
    */
@@ -8,8 +8,8 @@ export type Config = {
   disabled?: boolean
 }
 
-export const  =
-  (pluginOptions: Config) =>
+export const vanguardPlugin =
+  (pluginOptions: VanguardPluginConfig) =>
   (config: Config): Config => {
     if (!config.collections) {
       config.collections = []
@@ -67,12 +67,8 @@ export const  =
       config.admin.components.beforeDashboard = []
     }
 
-    config.admin.components.beforeDashboard.push(
-      `/client#BeforeDashboardClient`,
-    )
-    config.admin.components.beforeDashboard.push(
-      `/rsc#BeforeDashboardServer`,
-    )
+    config.admin.components.beforeDashboard.push(`/client#BeforeDashboardClient`)
+    config.admin.components.beforeDashboard.push(`/rsc#BeforeDashboardServer`)
 
     config.endpoints.push({
       handler: () => {
