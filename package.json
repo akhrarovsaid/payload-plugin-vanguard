@@ -1,7 +1,10 @@
 {
   "name": "payload-plugin-vanguard",
   "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "description": "One-click Backup & Restore plugin for PayloadCMS",
+  "author": {
+    "name": "Said Akhrarov"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {
