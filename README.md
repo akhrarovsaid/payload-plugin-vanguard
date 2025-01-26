@@ -1,1 +1,1 @@
-# Plugin
+# payload-plugin-vanguard
