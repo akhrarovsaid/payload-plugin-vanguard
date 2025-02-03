@@ -2,6 +2,9 @@ import type { CollectionConfig, Config } from 'payload'
 
 import type { VanguardPluginConfig } from './types.js'
 
+import { BackupMethod } from './utilities/BackupMethod.js'
+import { BackupStatus } from './utilities/BackupStatus.js'
+
 export const getBackupCollection = ({
   config,
   pluginConfig,
@@ -16,9 +19,16 @@ export const getBackupCollection = ({
   const collection: CollectionConfig = {
     slug: 'backups',
     access: {
-      update: () => false,
+      create: () => false,
     },
     admin: {
+      components: {
+        views: {
+          list: {
+            actions: ['payload-plugin-vanguard/rsc#CreateBackupAction'],
+          },
+        },
+      },
       useAsTitle: 'createdAt',
     },
     disableDuplicate: true,
@@ -29,14 +39,8 @@ export const getBackupCollection = ({
         admin: {
           readOnly: true,
         },
-        options: ['success', 'failed', 'inProgress'],
-      },
-      {
-        name: 'size',
-        type: 'number',
-        admin: {
-          readOnly: true,
-        },
+        defaultValue: BackupStatus.IN_PROGRESS,
+        options: [BackupStatus.SUCCESS, BackupStatus.FAILURE, BackupStatus.IN_PROGRESS],
       },
       {
         name: 'completedAt',
@@ -59,13 +63,19 @@ export const getBackupCollection = ({
         admin: {
           readOnly: true,
         },
-        defaultValue: 'manual',
-        options: ['manual', 'scheduled'],
+        defaultValue: BackupMethod.MANUAL,
+        options: [BackupMethod.MANUAL, BackupMethod.AUTO],
       },
     ],
     labels: {
       plural: 'Database Backups',
       singular: 'Database Backup',
+    },
+    upload: {
+      bulkUpload: false,
+      crop: false,
+      mimeTypes: ['application/octet-stream'],
+      pasteURL: false,
     },
   }
 

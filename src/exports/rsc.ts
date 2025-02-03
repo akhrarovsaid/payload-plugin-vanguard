@@ -1,1 +1,1 @@
-export { BeforeDashboardServer } from '../components/BeforeDashboardServer.js'
+export { CreateBackupAction } from '../components/CreateBackupAction/index.js'
