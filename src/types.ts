@@ -6,4 +6,5 @@ export type VanguardPluginConfig = {
    */
   disabled?: boolean
   overrideBackupCollection?: (collection: CollectionConfig) => CollectionConfig
+  overrideUploadCollection?: (collection: CollectionConfig) => CollectionConfig
 }

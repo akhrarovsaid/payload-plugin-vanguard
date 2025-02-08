@@ -8,16 +8,18 @@ import { BackupStatus } from './utilities/BackupStatus.js'
 export const getBackupCollection = ({
   config,
   pluginConfig,
+  uploadCollection,
 }: {
   config: Config
   pluginConfig: VanguardPluginConfig
+  uploadCollection: CollectionConfig
 }): CollectionConfig => {
   const { overrideBackupCollection } = pluginConfig
 
   const userSlug = config.admin?.user ?? 'users'
 
   const collection: CollectionConfig = {
-    slug: 'backups',
+    slug: 'vanguard-backups',
     access: {
       create: () => false,
     },
@@ -29,10 +31,19 @@ export const getBackupCollection = ({
           },
         },
       },
+      hidden: pluginConfig.disabled,
       useAsTitle: 'createdAt',
     },
     disableDuplicate: true,
     fields: [
+      {
+        name: 'file',
+        type: 'upload',
+        admin: {
+          readOnly: true,
+        },
+        relationTo: uploadCollection.slug,
+      },
       {
         name: 'status',
         type: 'select',
@@ -70,12 +81,6 @@ export const getBackupCollection = ({
     labels: {
       plural: 'Database Backups',
       singular: 'Database Backup',
-    },
-    upload: {
-      bulkUpload: false,
-      crop: false,
-      mimeTypes: ['application/octet-stream'],
-      pasteURL: false,
     },
   }
 
