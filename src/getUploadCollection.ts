@@ -22,7 +22,7 @@ export const getUploadCollection = ({
     upload: {
       bulkUpload: false,
       crop: false,
-      mimeTypes: ['application/octet-stream'],
+      mimeTypes: ['application/*'],
       pasteURL: false,
     },
   }

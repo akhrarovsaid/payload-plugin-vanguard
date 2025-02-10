@@ -57,6 +57,9 @@ export const getBackupCollection = ({
         name: 'completedAt',
         type: 'date',
         admin: {
+          date: {
+            displayFormat: 'PPPppp',
+          },
           readOnly: true,
         },
       },
