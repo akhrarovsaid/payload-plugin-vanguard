@@ -1,20 +1,28 @@
 'use client'
 
+import type { BackupHandlerResponse } from 'src/endpoints/backup/generateBackupHandler.js'
+
 import { LoadingOverlay, Pill, toast, useConfig, useModal } from '@payloadcms/ui'
+import { usePathname, useRouter } from 'next/navigation.js'
 import { Fragment, useCallback, useState } from 'react'
 
 import { ConfirmBackupModal } from './ConfirmBackupModal/index.js'
 
 const confirmModalSlug = 'confirm-backup-modal'
 
-export const CreateBackupActionClient = () => {
+export const CreateBackupActionClient = ({
+  backupEndpointPath,
+}: {
+  backupEndpointPath: string
+}) => {
   const {
     config: {
       routes: { api: apiRoute },
     },
   } = useConfig()
-
   const { openModal } = useModal()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const [loading, setLoading] = useState(false)
 
@@ -27,23 +35,28 @@ export const CreateBackupActionClient = () => {
     setLoading(true)
 
     try {
-      const res = await fetch(`${apiRoute}/database/backup`, {
+      const res = await fetch(`${apiRoute}${backupEndpointPath}`, {
         body: '{}',
         method: 'POST',
       })
 
+      const { doc, message } = (await res.json()) as BackupHandlerResponse
+
       if (!res.ok) {
-        toast.error('Something went wrong')
-        return
+        toast.error(message)
+      } else {
+        toast.success(message)
       }
 
-      const resData = await res.json()
+      if (doc) {
+        router.push(`${pathname}/${doc.id}`)
+      }
     } catch (_err) {
       // swallow error
     } finally {
       setLoading(false)
     }
-  }, [apiRoute, loading])
+  }, [apiRoute, backupEndpointPath, loading, pathname, router])
 
   return (
     <Fragment>

@@ -3,8 +3,8 @@ import type { FC } from 'react'
 
 import { CreateBackupActionClient } from './index.client.js'
 
-type Props = ServerProps
+type Props = { backupEndpointPath: string } & ServerProps
 
-export const CreateBackupAction: FC<Props> = (props) => {
-  return <CreateBackupActionClient />
+export const CreateBackupAction: FC<Props> = ({ backupEndpointPath }) => {
+  return <CreateBackupActionClient backupEndpointPath={backupEndpointPath} />
 }

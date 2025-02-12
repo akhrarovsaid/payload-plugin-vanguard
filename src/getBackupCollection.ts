@@ -2,8 +2,9 @@ import type { CollectionConfig, Config } from 'payload'
 
 import type { VanguardPluginConfig } from './types.js'
 
-import { BackupMethod } from './utilities/BackupMethod.js'
-import { BackupStatus } from './utilities/BackupStatus.js'
+import { defaultBackupEndpointPath } from './endpoints/backup/defaults.js'
+import { BackupMethod } from './utilities/backupMethod.js'
+import { BackupStatus } from './utilities/backupStatus.js'
 
 export const getBackupCollection = ({
   config,
@@ -27,7 +28,14 @@ export const getBackupCollection = ({
       components: {
         views: {
           list: {
-            actions: ['payload-plugin-vanguard/rsc#CreateBackupAction'],
+            actions: [
+              {
+                path: 'payload-plugin-vanguard/rsc#CreateBackupAction',
+                serverProps: {
+                  backupEndpointPath: pluginConfig.routes?.backup ?? defaultBackupEndpointPath,
+                },
+              },
+            ],
           },
         },
       },

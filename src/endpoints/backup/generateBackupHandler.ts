@@ -1,14 +1,9 @@
 import type { VanguardPluginConfig } from 'src/types.js'
 
-import { spawn } from 'child_process'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
+import { status as httpStatus } from 'http-status'
 import {
-  type BasePayload,
   type CollectionConfig,
   type Config,
-  type DatabaseAdapter,
   headersWithCors,
   type JsonObject,
   type PayloadHandler,
@@ -16,13 +11,16 @@ import {
 } from 'payload'
 import { createBackupService } from 'src/adapters/backupServiceFactory.js'
 
-import { BackupStatus } from './backupStatus.js'
-
-type Args = {
+export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
   config: Config
   pluginConfig: VanguardPluginConfig
   uploadCollection: CollectionConfig
+}
+
+export type BackupHandlerResponse = {
+  doc?: JsonObject & TypeWithID
+  message: string
 }
 
 export const generateBackupHandler = ({
@@ -30,7 +28,7 @@ export const generateBackupHandler = ({
   config,
   pluginConfig,
   uploadCollection,
-}: Args): PayloadHandler => {
+}: BackupHandlerArgs): PayloadHandler => {
   const backupSlug = backupCollection.slug
   const uploadSlug = uploadCollection.slug
   return async (req) => {
@@ -39,7 +37,10 @@ export const generateBackupHandler = ({
     const headers = headersWithCors({ headers: new Headers(), req })
 
     if (!req.user) {
-      return Response.json({ message: t('error:unauthorized') }, { headers, status: 401 })
+      return Response.json(
+        { message: t('error:unauthorized') },
+        { headers, status: httpStatus.UNAUTHORIZED },
+      )
     }
 
     // TODO: check for 'create' access
@@ -47,16 +48,24 @@ export const generateBackupHandler = ({
     const backupService = createBackupService(req)
 
     try {
-      await backupService.backup({
+      const doc = await backupService.backup({
         backupSlug,
         req,
         uploadSlug,
       })
+
+      return Response.json(
+        {
+          doc,
+          message: t('general:successfullyCreated', {
+            label: backupCollection.labels?.singular,
+          }),
+        },
+        { headers, status: httpStatus.CREATED },
+      )
     } catch (_err) {
       const err = _err as Error
       return Response.json({ message: err.message }, { headers, status: 500 })
     }
-
-    return Response.json({}, { status: 200 })
   }
 }
