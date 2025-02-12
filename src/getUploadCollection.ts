@@ -1,12 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import path from 'path'
-import { fileURLToPath } from 'url'
-
 import type { VanguardPluginConfig } from './types.js'
-
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
 
 export const getUploadCollection = ({
   pluginConfig,
@@ -31,7 +25,6 @@ export const getUploadCollection = ({
       bulkUpload: false,
       crop: false,
       pasteURL: false,
-      staticDir: path.resolve(dirname, slug),
     },
   }
 

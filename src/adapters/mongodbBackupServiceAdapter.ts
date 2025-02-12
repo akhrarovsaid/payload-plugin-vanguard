@@ -4,10 +4,11 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { BackupStatus } from 'src/utilities/backupStatus.js'
-import { getConnectionString } from 'src/utilities/getConnectionString.js'
 
 import type { AdapterArgs, BackupServiceAdapter } from './backupServiceAdapter.js'
+
+import { BackupStatus } from '../utilities/backupStatus.js'
+import { getConnectionString } from '../utilities/getConnectionString.js'
 
 async function runMongodump({
   backupSlug,

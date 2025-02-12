@@ -9,7 +9,8 @@ import {
   type PayloadHandler,
   type TypeWithID,
 } from 'payload'
-import { createBackupService } from 'src/adapters/backupServiceFactory.js'
+
+import { createBackupService } from '../../adapters/backupServiceFactory.js'
 
 export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
