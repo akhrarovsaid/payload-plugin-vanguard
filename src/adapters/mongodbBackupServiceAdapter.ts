@@ -9,6 +9,8 @@ import type { AdapterArgs, BackupServiceAdapter } from './backupServiceAdapter.j
 
 import { BackupStatus } from '../utilities/backupStatus.js'
 import { getConnectionString } from '../utilities/getConnectionString.js'
+import { getDBName } from '../utilities/getDBName.js'
+import { getUTCTimestamp } from '../utilities/getUTCTimestamp.js'
 
 async function runMongodump({
   backupSlug,
@@ -62,7 +64,7 @@ async function runMongodump({
 export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs) {
   const payload = req.payload
   const connectionString = getConnectionString({ payload })
-  const fileName = `mongodb_backup_${Date.now()}.gz`
+  const fileName = `${getDBName({ payload })}_${getUTCTimestamp()}.gz`
   const tmpFilePath = path.join(os.tmpdir(), fileName)
 
   const cleanupTempFile = async () => {
