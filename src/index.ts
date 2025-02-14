@@ -3,6 +3,7 @@ import type { Config } from 'payload'
 import type { VanguardPluginConfig } from './types.js'
 
 import { getBackupEndpoint } from './endpoints/backup/getBackupEndpoint.js'
+import { getRestoreEndpoint } from './endpoints/restore/getRestoreEndpoint.js'
 import { getBackupCollection } from './getBackupCollection.js'
 import { getUploadCollection } from './getUploadCollection.js'
 
@@ -37,13 +38,12 @@ export const vanguardPlugin =
         pluginConfig,
         uploadCollection,
       }),
-      {
-        handler: () => {
-          return Response.json({ message: 'Hello from custom endpoint' })
-        },
-        method: 'post',
-        path: '/vanguard/restore',
-      },
+      getRestoreEndpoint({
+        backupCollection,
+        config,
+        pluginConfig,
+        uploadCollection,
+      }),
     )
 
     return config

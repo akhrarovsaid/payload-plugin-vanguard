@@ -12,15 +12,19 @@ import { getConnectionString } from '../utilities/getConnectionString.js'
 import { getDBName } from '../utilities/getDBName.js'
 import { getUTCTimestamp } from '../utilities/getUTCTimestamp.js'
 
-async function runMongodump({
+type PayloadDoc = JsonObject & TypeWithID
+
+function runMongodump({
   backupSlug,
   connectionString,
+  dbName,
   payload,
   tmpFilePath,
   uploadSlug,
 }: {
   backupSlug: string
   connectionString: string
+  dbName: string
   payload: BasePayload
   tmpFilePath: string
   uploadSlug: string
@@ -29,6 +33,7 @@ async function runMongodump({
     const writeStream = fs.createWriteStream(tmpFilePath)
     const dumpProcess = spawn('mongodump', [
       `--uri=${connectionString}`,
+      `--db=${dbName}`,
       '--archive',
       '--gzip',
       `--excludeCollection=${backupSlug}`,
@@ -64,6 +69,7 @@ async function runMongodump({
 export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs) {
   const payload = req.payload
   const connectionString = getConnectionString({ payload })
+  const dbName = getDBName({ payload })
   const fileName = `${getDBName({ payload })}_${getUTCTimestamp()}.gz`
   const tmpFilePath = path.join(os.tmpdir(), fileName)
 
@@ -103,7 +109,7 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
     throw new Error(message)
   }
 
-  let backupDoc: JsonObject & TypeWithID
+  let backupDoc: PayloadDoc
   try {
     backupDoc = await payload.create({
       collection: backupSlug,
@@ -121,6 +127,7 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
     fileBuffer = await runMongodump({
       backupSlug,
       connectionString,
+      dbName,
       payload,
       tmpFilePath,
       uploadSlug,
@@ -134,7 +141,7 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
     )
   }
 
-  let uploadDoc: JsonObject & TypeWithID
+  let uploadDoc: PayloadDoc
   try {
     uploadDoc = await payload.create({
       collection: uploadSlug,
@@ -156,8 +163,8 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
       id: backupDoc.id,
       collection: backupSlug,
       data: {
+        backup: uploadDoc.id,
         completedAt: new Date().toISOString(),
-        file: uploadDoc.id,
         status: BackupStatus.SUCCESS,
       },
       req,
@@ -176,8 +183,97 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
   return backupDoc
 }
 
+function runMongorestore({
+  connectionString,
+  dbName,
+  payload,
+  url,
+}: {
+  connectionString: string
+  dbName: string
+  payload: BasePayload
+  url: string
+}): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const curl = spawn('curl', [`${payload.config.serverURL}${url}`])
+    console.log(connectionString, dbName, payload.config.serverURL, url)
+    const restoreProcess = spawn('mongorestore', [
+      `--uri=${connectionString}`,
+      `--nsInclude="${dbName}.*"`,
+      '--gzip',
+      '--archive',
+      /* '--drop', */
+    ])
+
+    curl.stdout.pipe(restoreProcess.stdin)
+
+    restoreProcess.stdout.on('data', (data) => console.log(data.toString()))
+    restoreProcess.stderr.on('data', (data) => console.log(data.toString()))
+
+    restoreProcess.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`mongorestore failed with code ${code}`))
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 // TODO:: Restore functionality
-export async function mongodbRestore() {}
+export async function mongodbRestore({ backupSlug, req, uploadSlug }: AdapterArgs) {
+  const payload = req.payload
+
+  // Get id from args
+  if (!req.json) {
+    const message = ''
+    payload.logger.error(message)
+    throw new Error(message)
+  }
+
+  const { id } = (await req.json()) as { id?: number | string }
+  if (typeof id !== 'string' && typeof id !== 'number') {
+    const message = ''
+    payload.logger.error(message)
+    throw new Error(message)
+  }
+
+  // Fetch backup doc
+  let backupDoc: PayloadDoc
+  try {
+    backupDoc = await payload.findByID({
+      id,
+      collection: backupSlug,
+      req,
+      select: {
+        backup: true,
+        status: true,
+      },
+    })
+  } catch (_err) {
+    //
+    payload.logger.error(_err)
+    throw new Error('uh oh')
+  }
+
+  const connectionString = getConnectionString({ payload })
+  const dbName = getDBName({ payload })
+  const url = backupDoc?.backup.url
+
+  // Execute operation
+  try {
+    await runMongorestore({
+      connectionString,
+      dbName,
+      payload,
+      url: `${req.origin}${url}`,
+    })
+  } catch (_err) {
+    //
+    payload.logger.error(_err)
+    throw new Error('uh oh')
+  }
+}
 
 export const mongodbBackupServiceAdapter: BackupServiceAdapter = {
   backup: mongodbBackup,

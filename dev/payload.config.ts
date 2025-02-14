@@ -27,7 +27,17 @@ export default buildConfig({
   collections: [
     {
       slug: 'posts',
-      fields: [],
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+        },
+        {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
+        },
+      ],
     },
     {
       slug: 'media',

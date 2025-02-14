@@ -3,6 +3,8 @@ import type { CollectionConfig, Config } from 'payload'
 import type { VanguardPluginConfig } from './types.js'
 
 import { defaultBackupEndpointPath } from './endpoints/backup/defaults.js'
+import { defaultRestoreEndpointPath } from './endpoints/restore/defaults.js'
+import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
 import { BackupMethod } from './utilities/backupMethod.js'
 import { BackupStatus } from './utilities/backupStatus.js'
 
@@ -18,6 +20,9 @@ export const getBackupCollection = ({
   const { overrideBackupCollection } = pluginConfig
 
   const userSlug = config.admin?.user ?? 'users'
+  const uploadSlug = uploadCollection.slug
+
+  const deleteBackupFileHook = getDeleteBackupFileHook({ uploadSlug })
 
   const collection: CollectionConfig = {
     slug: 'vanguard-backups',
@@ -26,6 +31,14 @@ export const getBackupCollection = ({
     },
     admin: {
       components: {
+        edit: {
+          SaveButton: {
+            path: 'payload-plugin-vanguard/rsc#RestoreButton',
+            serverProps: {
+              restoreEndpointPath: pluginConfig.routes?.restore ?? defaultRestoreEndpointPath,
+            },
+          },
+        },
         views: {
           list: {
             actions: [
@@ -45,50 +58,106 @@ export const getBackupCollection = ({
     disableDuplicate: true,
     fields: [
       {
-        name: 'file',
+        name: 'statusBar',
+        type: 'ui',
+        admin: {
+          components: {
+            Field: 'payload-plugin-vanguard/rsc#StatusBar',
+          },
+        },
+      },
+      {
+        name: 'backup',
         type: 'upload',
         admin: {
+          condition: (data) => data.backup,
           readOnly: true,
         },
-        relationTo: uploadCollection.slug,
+        relationTo: uploadSlug,
+      },
+      {
+        type: 'tabs',
+        tabs: [
+          {
+            fields: [
+              {
+                name: 'completedAt',
+                type: 'date',
+                admin: {
+                  date: {
+                    displayFormat: 'PPPppp',
+                  },
+                  readOnly: true,
+                },
+              },
+              {
+                name: 'initiatedBy',
+                type: 'relationship',
+                admin: {
+                  readOnly: true,
+                },
+                relationTo: userSlug,
+              },
+              {
+                name: 'restoredAt',
+                type: 'date',
+                admin: {
+                  date: {
+                    displayFormat: 'PPPppp',
+                  },
+                  readOnly: true,
+                },
+              },
+              {
+                name: 'restoredBy',
+                type: 'relationship',
+                admin: {
+                  readOnly: true,
+                },
+                relationTo: userSlug,
+              },
+            ],
+            label: 'Details',
+          },
+          {
+            fields: [
+              {
+                name: 'output',
+                type: 'textarea',
+                admin: {
+                  readOnly: true,
+                  rows: 10,
+                },
+              },
+            ],
+            label: 'Logs',
+          },
+        ],
       },
       {
         name: 'status',
         type: 'select',
         admin: {
+          hidden: true,
           readOnly: true,
         },
         defaultValue: BackupStatus.IN_PROGRESS,
         options: [BackupStatus.SUCCESS, BackupStatus.FAILURE, BackupStatus.IN_PROGRESS],
       },
       {
-        name: 'completedAt',
-        type: 'date',
-        admin: {
-          date: {
-            displayFormat: 'PPPppp',
-          },
-          readOnly: true,
-        },
-      },
-      {
-        name: 'initiatedBy',
-        type: 'relationship',
-        admin: {
-          readOnly: true,
-        },
-        relationTo: userSlug,
-      },
-      {
         name: 'method',
         type: 'select',
         admin: {
+          hidden: true,
           readOnly: true,
         },
         defaultValue: BackupMethod.MANUAL,
         options: [BackupMethod.MANUAL, BackupMethod.AUTO],
       },
     ],
+    hooks: {
+      afterDelete: [deleteBackupFileHook],
+    },
     labels: {
       plural: 'Database Backups',
       singular: 'Database Backup',
@@ -96,7 +165,7 @@ export const getBackupCollection = ({
   }
 
   if (typeof overrideBackupCollection === 'function') {
-    return overrideBackupCollection(collection)
+    return overrideBackupCollection({ collection })
   }
 
   return collection

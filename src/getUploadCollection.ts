@@ -29,7 +29,7 @@ export const getUploadCollection = ({
   }
 
   if (typeof overrideUploadCollection === 'function') {
-    return overrideUploadCollection(collection)
+    return overrideUploadCollection({ collection })
   }
 
   return collection
