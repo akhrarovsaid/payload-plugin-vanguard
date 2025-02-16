@@ -44,7 +44,7 @@ export const generateBackupHandler = ({
       )
     }
 
-    // TODO: check for 'create' access
+    // TODO: check for 'backup' access
 
     const backupService = createBackupService(req)
 

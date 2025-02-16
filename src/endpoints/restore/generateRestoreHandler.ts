@@ -33,6 +33,7 @@ export const generateRestoreHandler = ({
   const backupSlug = backupCollection.slug
   const uploadSlug = uploadCollection.slug
   return async (req) => {
+    const payload = req.payload
     const t = req.t
 
     const headers = headersWithCors({ headers: new Headers(), req })
@@ -46,10 +47,24 @@ export const generateRestoreHandler = ({
 
     // TODO: check for 'restore' access
 
+    if (!req.json) {
+      const message = req.t('error:missingRequiredData')
+      payload.logger.error(message)
+      return Response.json({ message }, { headers, status: httpStatus.BAD_REQUEST })
+    }
+
+    const { id } = (await req.json()) as { id?: number | string }
+    if (typeof id !== 'string' && typeof id !== 'number') {
+      const message = req.t('error:missingIDOfDocument')
+      payload.logger.error(message)
+      return Response.json({ message }, { headers, status: httpStatus.BAD_REQUEST })
+    }
+
     const backupService = createBackupService(req)
 
     try {
       const doc = await backupService.restore({
+        id,
         backupSlug,
         req,
         uploadSlug,
@@ -58,12 +73,13 @@ export const generateRestoreHandler = ({
       return Response.json(
         {
           doc,
-          message: 'Successfully restored.',
+          message: 'Successful restore.',
         },
         { headers, status: httpStatus.OK },
       )
     } catch (_err) {
       const err = _err as Error
+      payload.logger.error(err)
       return Response.json(
         { message: err.message },
         { headers, status: httpStatus.INTERNAL_SERVER_ERROR },

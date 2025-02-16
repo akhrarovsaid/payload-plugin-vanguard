@@ -1,12 +1,14 @@
 import type { JsonObject, PayloadRequest, TypeWithID } from 'payload'
 
-export type AdapterArgs = {
+export type BackupAdapterArgs = {
   backupSlug: string
   req: PayloadRequest
   uploadSlug: string
 }
 
+export type RestoreAdapterArgs = { id: number | string } & BackupAdapterArgs
+
 export interface BackupServiceAdapter {
-  backup: (args: AdapterArgs) => Promise<JsonObject & TypeWithID>
-  restore: (args: AdapterArgs) => Promise<void>
+  backup: (args: BackupAdapterArgs) => Promise<JsonObject & TypeWithID>
+  restore: (args: RestoreAdapterArgs) => Promise<void>
 }

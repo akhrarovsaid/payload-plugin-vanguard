@@ -5,7 +5,11 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
-import type { AdapterArgs, BackupServiceAdapter } from './backupServiceAdapter.js'
+import type {
+  BackupAdapterArgs,
+  BackupServiceAdapter,
+  RestoreAdapterArgs,
+} from './backupServiceAdapter.js'
 
 import { BackupStatus } from '../utilities/backupStatus.js'
 import { getConnectionString } from '../utilities/getConnectionString.js'
@@ -66,7 +70,7 @@ function runMongodump({
   })
 }
 
-export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs) {
+export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapterArgs) {
   const payload = req.payload
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
@@ -155,7 +159,7 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: AdapterArgs
       req,
     })
   } catch (_err) {
-    throw await handleBackupError(_err, 'Backup failed: file upload error', backupDoc.id, true)
+    throw await handleBackupError(_err, req.t('error:problemUploadingFile'), backupDoc.id, true)
   }
 
   try {
@@ -207,8 +211,9 @@ function runMongorestore({
 
     curl.stdout.pipe(restoreProcess.stdin)
 
-    restoreProcess.stdout.on('data', (data) => console.log(data.toString()))
-    restoreProcess.stderr.on('data', (data) => console.log(data.toString()))
+    // TODO: Restore logs
+    /* restoreProcess.stdout.on('data', (data) => console.log(data.toString()))
+    restoreProcess.stderr.on('data', (data) => console.log(data.toString())) */
 
     restoreProcess.on('close', (code) => {
       if (code !== 0) {
@@ -220,25 +225,9 @@ function runMongorestore({
   })
 }
 
-// TODO:: Restore functionality
-export async function mongodbRestore({ backupSlug, req, uploadSlug }: AdapterArgs) {
+export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs) {
   const payload = req.payload
 
-  // Get id from args
-  if (!req.json) {
-    const message = ''
-    payload.logger.error(message)
-    throw new Error(message)
-  }
-
-  const { id } = (await req.json()) as { id?: number | string }
-  if (typeof id !== 'string' && typeof id !== 'number') {
-    const message = ''
-    payload.logger.error(message)
-    throw new Error(message)
-  }
-
-  // Fetch backup doc
   let backupDoc: PayloadDoc
   try {
     backupDoc = await payload.findByID({
@@ -251,16 +240,15 @@ export async function mongodbRestore({ backupSlug, req, uploadSlug }: AdapterArg
       },
     })
   } catch (_err) {
-    //
-    payload.logger.error(_err)
-    throw new Error('uh oh')
+    const message = req.t('error:notFound')
+    payload.logger.error(_err, message)
+    throw new Error(message)
   }
 
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
   const url = backupDoc?.backup.url
 
-  // Execute operation
   try {
     await runMongorestore({
       connectionString,
@@ -269,9 +257,23 @@ export async function mongodbRestore({ backupSlug, req, uploadSlug }: AdapterArg
       url: `${req.origin}${url}`,
     })
   } catch (_err) {
-    //
-    payload.logger.error(_err)
-    throw new Error('uh oh')
+    const err = _err as Error
+    payload.logger.error(err)
+    throw new Error(err.message)
+  }
+
+  try {
+    await payload.update({
+      id,
+      collection: backupSlug,
+      data: {
+        restoredAt: new Date().toISOString(),
+        restoredBy: req.user!.id,
+      },
+      req,
+    })
+  } catch (_err) {
+    payload.logger.warn(_err, `Unable to update backup doc with id: ${id} after restore.`)
   }
 }
 
