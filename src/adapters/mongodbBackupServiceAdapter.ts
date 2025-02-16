@@ -196,7 +196,7 @@ function runMongorestore({
 }): Promise<void> {
   return new Promise((resolve, reject) => {
     const curl = spawn('curl', [`${payload.config.serverURL}${url}`])
-    console.log(connectionString, dbName, payload.config.serverURL, url)
+
     const restoreProcess = spawn('mongorestore', [
       `--uri=${connectionString}`,
       `--nsInclude="${dbName}.*"`,
