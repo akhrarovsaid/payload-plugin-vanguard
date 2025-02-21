@@ -1,13 +1,14 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from 'payload'
 
 export type CollectionOverrideArgs = {
   collection: CollectionConfig
 }
 
 export type VanguardPluginConfig = {
-  /**
-   * List of collections to add a custom field
-   */
+  access?: {
+    backup?: Access
+    restore?: Access
+  }
   disabled?: boolean
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideUploadCollection?: (args: CollectionOverrideArgs) => CollectionConfig
