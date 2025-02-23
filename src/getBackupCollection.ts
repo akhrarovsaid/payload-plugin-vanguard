@@ -121,14 +121,7 @@ export const getBackupCollection = ({
           },
           {
             fields: [
-              {
-                name: 'output',
-                type: 'textarea',
-                admin: {
-                  readOnly: true,
-                  rows: 10,
-                },
-              },
+              // TODO: Comprehensive logs feature
             ],
             label: 'Logs',
           },
