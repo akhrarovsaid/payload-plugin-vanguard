@@ -33,6 +33,7 @@
     "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
+    "bump-payload": "pnpm up @payloadcms/*@latest payload@latest",
     "clean": "rimraf {dist,*.tsbuildinfo}",
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
     "dev": "payload run ./dev/server.ts",
@@ -46,14 +47,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@payloadcms/db-mongodb": "3.27.0",
-    "@payloadcms/db-postgres": "3.27.0",
-    "@payloadcms/db-sqlite": "3.27.0",
-    "@payloadcms/eslint-config": "3.9.0",
-    "@payloadcms/next": "3.27.0",
-    "@payloadcms/richtext-lexical": "3.27.0",
-    "@payloadcms/translations": "3.27.0",
-    "@payloadcms/ui": "3.27.0",
+    "@payloadcms/db-mongodb": "3.29.0",
+    "@payloadcms/db-postgres": "3.29.0",
+    "@payloadcms/db-sqlite": "3.29.0",
+    "@payloadcms/eslint-config": "3.28.0",
+    "@payloadcms/next": "3.29.0",
+    "@payloadcms/richtext-lexical": "3.29.0",
+    "@payloadcms/translations": "3.29.0",
+    "@payloadcms/ui": "3.29.0",
     "@swc-node/register": "1.10.9",
     "@swc/cli": "0.5.1",
     "@swc/jest": "^0.2.37",
@@ -71,7 +72,7 @@
     "mongodb-memory-server": "^10.1.2",
     "next": "15.1.5",
     "open": "^10.1.0",
-    "payload": "3.27.0",
+    "payload": "3.29.0",
     "prettier": "^3.4.2",
     "qs-esm": "7.0.2",
     "react": "19.0.0",
@@ -82,7 +83,7 @@
     "typescript": "5.7.3"
   },
   "peerDependencies": {
-    "payload": "^3.27.0"
+    "payload": "^3.29.0"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0"
