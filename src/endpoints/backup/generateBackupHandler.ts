@@ -45,6 +45,7 @@ export const generateBackupHandler = ({
     }
 
     // TODO: check for 'backup' access
+    // TODO: implement pluginConfig.access?.backup
 
     const backupService = createBackupService(req)
 
