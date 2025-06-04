@@ -25,7 +25,7 @@ export const StatusPill: FC<Props> = (props) => {
   }
 
   return (
-    <Pill alignIcon="left" icon={icon} pillStyle={pillStyle}>
+    <Pill alignIcon="left" icon={icon} pillStyle={pillStyle} size="small">
       {statusText}
     </Pill>
   )

@@ -9,7 +9,7 @@ type Props = {
 }
 
 export const MethodPill: FC<Props> = ({ method }) => (
-  <Pill alignIcon="left" pillStyle="light-gray">
+  <Pill alignIcon="left" pillStyle="light-gray" size="small">
     {`${method.charAt(0).toUpperCase() + method.slice(1)} Backup`}
   </Pill>
 )

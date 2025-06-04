@@ -7,7 +7,7 @@ type Props = {
 }
 
 export const RestoredPill: FC<Props> = ({ restored }) => (
-  <Pill alignIcon="left" pillStyle="light-gray">
+  <Pill alignIcon="left" pillStyle="light-gray" size="small">
     {restored ? 'Previously Restored' : 'Unrestored'}
   </Pill>
 )
