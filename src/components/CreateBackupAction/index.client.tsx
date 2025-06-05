@@ -60,7 +60,7 @@ export const CreateBackupActionClient = ({
 
   return (
     <Fragment>
-      <Pill className="pill--has-action" onClick={handleOpenModal}>
+      <Pill className="pill--has-action" onClick={handleOpenModal} size="small">
         Create Backup
       </Pill>
       <ConfirmBackupModal onConfirm={handleSubmit} slug={confirmModalSlug} />

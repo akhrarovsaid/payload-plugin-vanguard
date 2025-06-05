@@ -73,7 +73,7 @@ export const generateRestoreHandler = ({
       return Response.json(
         {
           doc,
-          message: 'Successful restore.',
+          message: t('version:restoredSuccessfully'),
         },
         { headers, status: httpStatus.OK },
       )

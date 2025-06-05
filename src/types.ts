@@ -1,4 +1,4 @@
-import type { Access, CollectionConfig } from 'payload'
+import type { Access, CollectionConfig, JsonObject, TypeWithID } from 'payload'
 
 export type CollectionOverrideArgs = {
   collection: CollectionConfig
@@ -9,6 +9,7 @@ export type VanguardPluginConfig = {
     backup?: Access
     restore?: Access
   }
+  debug?: boolean
   disabled?: boolean
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideUploadCollection?: (args: CollectionOverrideArgs) => CollectionConfig
@@ -17,3 +18,5 @@ export type VanguardPluginConfig = {
     restore?: string
   }
 }
+
+export type PayloadDoc = JsonObject & TypeWithID

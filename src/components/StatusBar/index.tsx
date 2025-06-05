@@ -7,7 +7,7 @@ import { StatusPill } from './StatusPill.js'
 
 export const StatusBar: FC<UIFieldServerProps> = (props) => {
   const {
-    data: { method, status },
+    data: { method, restoredAt, restoredBy, status },
   } = props
 
   return (
@@ -17,7 +17,7 @@ export const StatusBar: FC<UIFieldServerProps> = (props) => {
     >
       <StatusPill status={status} />
       <MethodPill method={method} />
-      <RestoredPill />
+      <RestoredPill restored={restoredAt || restoredBy} />
     </div>
   )
 }

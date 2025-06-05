@@ -1,27 +1,25 @@
-import type { BasePayload, JsonObject, TypeWithID } from 'payload'
+import type { BasePayload } from 'payload'
+import type { PayloadDoc } from 'src/types.js'
 
 import { spawn } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
-import type {
-  BackupAdapterArgs,
-  BackupServiceAdapter,
-  RestoreAdapterArgs,
-} from './backupServiceAdapter.js'
+import type { BackupAdapterArgs, BackupServiceAdapter, RestoreAdapterArgs } from './types.js'
 
 import { BackupStatus } from '../utilities/backupStatus.js'
+import { cleanupTempFiles } from '../utilities/cleanupTempFiles.js'
 import { getConnectionString } from '../utilities/getConnectionString.js'
 import { getDBName } from '../utilities/getDBName.js'
 import { getUTCTimestamp } from '../utilities/getUTCTimestamp.js'
-
-type PayloadDoc = JsonObject & TypeWithID
+import { uploadLogs } from '../utilities/uploadLogs.js'
 
 function runMongodump({
   backupSlug,
   connectionString,
   dbName,
+  logFilePath,
   payload,
   tmpFilePath,
   uploadSlug,
@@ -29,12 +27,15 @@ function runMongodump({
   backupSlug: string
   connectionString: string
   dbName: string
+  logFilePath: string
   payload: BasePayload
   tmpFilePath: string
   uploadSlug: string
 }): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const writeStream = fs.createWriteStream(tmpFilePath)
+    const archiveStream = fs.createWriteStream(tmpFilePath)
+    const logStream = fs.createWriteStream(logFilePath, { flags: 'a' })
+
     const dumpProcess = spawn('mongodump', [
       `--uri=${connectionString}`,
       `--db=${dbName}`,
@@ -44,14 +45,18 @@ function runMongodump({
       `--excludeCollection=${uploadSlug}`,
     ])
 
-    dumpProcess.stdout.pipe(writeStream)
+    dumpProcess.stdout.pipe(archiveStream)
+    dumpProcess.stderr.pipe(logStream)
 
     dumpProcess.on('error', (err) => {
       payload.logger.error(err)
+      logStream.end()
       reject(err)
     })
 
     dumpProcess.on('close', async (code) => {
+      logStream.end()
+
       if (code !== 0) {
         const err = new Error(`mongodump exited with code ${code}`)
         payload.logger.error(err)
@@ -74,40 +79,60 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
   const payload = req.payload
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
-  const fileName = `${getDBName({ payload })}_${getUTCTimestamp()}.gz`
-  const tmpFilePath = path.join(os.tmpdir(), fileName)
 
-  const cleanupTempFile = async () => {
-    try {
-      await fs.promises.unlink(tmpFilePath)
-    } catch (_err) {
-      const err = _err as Error
-      payload.logger.warn(err, `Failed to delete temp file: ${tmpFilePath}`)
-    }
-  }
+  const fileNameWithoutExtension = `${getDBName({ payload })}_${getUTCTimestamp()}`
+  const archiveFileName = `${fileNameWithoutExtension}.gz`
+  const logFileName = `${fileNameWithoutExtension}.log`
+  const tmpFilePath = path.join(os.tmpdir(), archiveFileName)
+  const logFilePath = path.join(os.tmpdir(), logFileName)
 
-  const handleBackupError = async (
-    error: unknown,
-    message: string,
-    backupDocId?: number | string,
-    unlinkTempFile?: boolean,
-  ) => {
+  const handleBackupError = async ({
+    backupDocId,
+    backupLogsId,
+    error,
+    flushLogs,
+    message,
+    unlinkTempFile,
+  }: {
+    backupDocId?: number | string
+    backupLogsId?: number | string
+    error: unknown
+    flushLogs?: boolean
+    message: string
+    unlinkTempFile?: boolean
+  }) => {
     payload.logger.error(error, message)
 
+    const hasBackupLogsAlready = typeof backupLogsId !== 'undefined'
     if (backupDocId) {
-      // TODO:: Store error log
-      await payload.update({
-        id: backupDocId,
-        collection: backupSlug,
-        data: {
-          status: BackupStatus.FAILURE,
-        },
-        req,
-      })
+      try {
+        let logsDoc: PayloadDoc | undefined = undefined
+        if (flushLogs && !hasBackupLogsAlready) {
+          logsDoc = await uploadLogs({
+            filename: logFileName,
+            path: logFilePath,
+            payload,
+            req,
+            uploadSlug,
+          })
+        }
+
+        await payload.update({
+          id: backupDocId,
+          collection: backupSlug,
+          data: {
+            backupLogs: hasBackupLogsAlready ? backupLogsId : logsDoc?.id,
+            status: BackupStatus.FAILURE,
+          },
+          req,
+        })
+      } catch (_err) {
+        payload.logger.error(_err)
+      }
     }
 
     if (unlinkTempFile) {
-      await cleanupTempFile()
+      await cleanupTempFiles(payload, tmpFilePath, logFilePath)
     }
 
     throw new Error(message)
@@ -123,7 +148,10 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
       req,
     })
   } catch (_err) {
-    throw await handleBackupError(_err, 'Backup aborted: failed to create initial doc')
+    throw await handleBackupError({
+      error: _err,
+      message: 'Backup aborted: failed to create initial doc',
+    })
   }
 
   let fileBuffer: Buffer
@@ -132,17 +160,19 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
       backupSlug,
       connectionString,
       dbName,
+      logFilePath,
       payload,
       tmpFilePath,
       uploadSlug,
     })
   } catch (_err) {
-    throw await handleBackupError(
-      _err,
-      'Backup failed: mongodump process error',
-      backupDoc.id,
-      true,
-    )
+    throw await handleBackupError({
+      backupDocId: backupDoc.id,
+      error: _err,
+      flushLogs: true,
+      message: 'Backup failed: mongodump process error',
+      unlinkTempFile: true,
+    })
   }
 
   let uploadDoc: PayloadDoc
@@ -151,7 +181,7 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
       collection: uploadSlug,
       data: {},
       file: {
-        name: fileName,
+        name: archiveFileName,
         data: fileBuffer,
         mimetype: 'application/gzip',
         size: fileBuffer.length,
@@ -159,8 +189,22 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
       req,
     })
   } catch (_err) {
-    throw await handleBackupError(_err, req.t('error:problemUploadingFile'), backupDoc.id, true)
+    throw await handleBackupError({
+      backupDocId: backupDoc.id,
+      error: _err,
+      flushLogs: true,
+      message: req.t('error:problemUploadingFile'),
+      unlinkTempFile: true,
+    })
   }
+
+  const logsDoc: PayloadDoc | undefined = await uploadLogs({
+    filename: logFileName,
+    path: logFilePath,
+    payload,
+    req,
+    uploadSlug,
+  })
 
   try {
     await payload.update({
@@ -168,21 +212,24 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
       collection: backupSlug,
       data: {
         backup: uploadDoc.id,
+        backupLogs: logsDoc?.id,
         completedAt: new Date().toISOString(),
         status: BackupStatus.SUCCESS,
       },
       req,
     })
   } catch (_err) {
-    throw await handleBackupError(
-      _err,
-      'Backup failed: update backup doc error',
-      backupDoc.id,
-      true,
-    )
+    throw await handleBackupError({
+      backupDocId: backupDoc.id,
+      backupLogsId: logsDoc?.id,
+      error: _err,
+      flushLogs: true,
+      message: 'Backup failed: update backup doc error',
+      unlinkTempFile: true,
+    })
   }
 
-  await cleanupTempFile()
+  await cleanupTempFiles(payload, tmpFilePath, logFilePath)
 
   return backupDoc
 }
@@ -190,15 +237,18 @@ export async function mongodbBackup({ backupSlug, req, uploadSlug }: BackupAdapt
 function runMongorestore({
   connectionString,
   dbName,
+  logFilePath,
   payload,
   url,
 }: {
   connectionString: string
   dbName: string
+  logFilePath: string
   payload: BasePayload
   url: string
 }): Promise<void> {
   return new Promise((resolve, reject) => {
+    const logStream = fs.createWriteStream(logFilePath)
     const curl = spawn('curl', [`${payload.config.serverURL}${url}`])
 
     const restoreProcess = spawn('mongorestore', [
@@ -206,26 +256,31 @@ function runMongorestore({
       `--nsInclude="${dbName}.*"`,
       '--gzip',
       '--archive',
-      /* '--drop', */
     ])
 
     curl.stdout.pipe(restoreProcess.stdin)
 
-    // TODO: Restore logs
-    /* restoreProcess.stdout.on('data', (data) => console.log(data.toString()))
-    restoreProcess.stderr.on('data', (data) => console.log(data.toString())) */
+    restoreProcess.stderr.on('data', (data) => {
+      logStream.write(data)
+    })
 
     restoreProcess.on('close', (code) => {
+      logStream.end()
       if (code !== 0) {
         reject(new Error(`mongorestore failed with code ${code}`))
       } else {
         resolve()
       }
     })
+
+    restoreProcess.on('error', (err) => {
+      logStream.end()
+      reject(err)
+    })
   })
 }
 
-export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs) {
+export async function mongodbRestore({ id, backupSlug, req, uploadSlug }: RestoreAdapterArgs) {
   const payload = req.payload
 
   let backupDoc: PayloadDoc
@@ -249,10 +304,15 @@ export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs
   const dbName = getDBName({ payload })
   const url = backupDoc?.backup.url
 
+  const fileNameWithoutExtension = `${dbName}_${getUTCTimestamp()}`
+  const logFileName = `${fileNameWithoutExtension}.log`
+  const logFilePath = path.join(os.tmpdir(), logFileName)
+
   try {
     await runMongorestore({
       connectionString,
       dbName,
+      logFilePath,
       payload,
       url: `${req.origin}${url}`,
     })
@@ -262,6 +322,25 @@ export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs
     throw new Error(err.message)
   }
 
+  let logsDoc: PayloadDoc | undefined = undefined
+  try {
+    const logBuffer = await fs.promises.readFile(logFilePath)
+
+    logsDoc = await payload.create({
+      collection: uploadSlug,
+      data: {},
+      file: {
+        name: logFileName,
+        data: logBuffer,
+        mimetype: 'text/plain',
+        size: logBuffer.length,
+      },
+      req,
+    })
+  } catch (_err) {
+    payload.logger.warn(_err, `Failed to read log file: ${logFilePath}`)
+  }
+
   try {
     await payload.update({
       id,
@@ -269,6 +348,7 @@ export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs
       data: {
         restoredAt: new Date().toISOString(),
         restoredBy: req.user!.id,
+        restoreLogs: logsDoc?.id,
       },
       req,
     })
@@ -277,7 +357,7 @@ export async function mongodbRestore({ id, backupSlug, req }: RestoreAdapterArgs
   }
 }
 
-export const mongodbBackupServiceAdapter: BackupServiceAdapter = {
+export const mongodbAdapter: BackupServiceAdapter = {
   backup: mongodbBackup,
   restore: mongodbRestore,
 }

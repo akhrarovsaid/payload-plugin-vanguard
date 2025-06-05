@@ -26,8 +26,6 @@ export type BackupHandlerResponse = {
 
 export const generateBackupHandler = ({
   backupCollection,
-  config,
-  pluginConfig,
   uploadCollection,
 }: BackupHandlerArgs): PayloadHandler => {
   const backupSlug = backupCollection.slug

@@ -4,6 +4,7 @@ import type { VanguardPluginConfig } from './types.js'
 
 import { defaultBackupEndpointPath } from './endpoints/backup/defaults.js'
 import { defaultRestoreEndpointPath } from './endpoints/restore/defaults.js'
+import { getLogsField } from './fields/getLogsField.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
 import { BackupMethod } from './utilities/backupMethod.js'
 import { BackupStatus } from './utilities/backupStatus.js'
@@ -64,6 +65,7 @@ export const getBackupCollection = ({
           components: {
             Field: 'payload-plugin-vanguard/rsc#StatusBar',
           },
+          disableListColumn: true,
         },
       },
       {
@@ -121,7 +123,16 @@ export const getBackupCollection = ({
           },
           {
             fields: [
-              // TODO: Comprehensive logs feature
+              {
+                type: 'collapsible',
+                fields: [getLogsField({ name: 'backupLogs', uploadSlug })],
+                label: 'Backup Logs',
+              },
+              {
+                type: 'collapsible',
+                fields: [getLogsField({ name: 'restoreLogs', uploadSlug })],
+                label: 'Restore Logs',
+              },
             ],
             label: 'Logs',
           },

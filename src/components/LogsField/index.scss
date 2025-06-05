@@ -1,0 +1,34 @@
+@import '~@payloadcms/ui/scss';
+
+@layer payload-default {
+  .vanguard-logs {
+    &__controls {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--base) / 4);
+      margin-bottom: var(--base);
+    }
+
+    &__filename-btn {
+      text-decoration: underline;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    &__download-btn {
+      margin-left: auto;
+    }
+
+    & .btn {
+      margin-block: 0;
+    }
+
+    & .btn .icon-copy {
+      padding: 0;
+    }
+    
+    & .btn .icon--document, & .btn .icon--copy {
+      color: var(--theme-elevation-300);
+    }
+  }
+}

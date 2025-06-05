@@ -8,7 +8,7 @@ export type BackupAdapterArgs = {
 
 export type RestoreAdapterArgs = { id: number | string } & BackupAdapterArgs
 
-export interface BackupServiceAdapter {
+export type BackupServiceAdapter = {
   backup: (args: BackupAdapterArgs) => Promise<JsonObject & TypeWithID>
   restore: (args: RestoreAdapterArgs) => Promise<void>
 }

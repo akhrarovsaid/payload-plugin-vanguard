@@ -17,7 +17,7 @@ export const getUploadCollection = ({
       create: () => false,
     },
     admin: {
-      hidden: true,
+      hidden: !pluginConfig.debug,
     },
     disableDuplicate: true,
     fields: [],
