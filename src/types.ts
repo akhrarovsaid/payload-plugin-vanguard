@@ -1,5 +1,7 @@
 import type { Access, CollectionConfig, JsonObject, TypeWithID } from 'payload'
 
+import type { GenerateFilenameFn } from './adapters/backupService/types.js'
+
 export type CollectionOverrideArgs = {
   collection: CollectionConfig
 }
@@ -11,6 +13,7 @@ export type VanguardPluginConfig = {
   }
   debug?: boolean
   disabled?: boolean
+  generateFilename?: GenerateFilenameFn
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideUploadCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   routes?: {

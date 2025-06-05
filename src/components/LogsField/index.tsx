@@ -2,13 +2,11 @@ import type { UploadFieldServerProps } from 'payload'
 import type { FC, ReactNode } from 'react'
 
 import { getTranslation } from '@payloadcms/translations'
-import { Link, TextareaInput } from '@payloadcms/ui'
 
 import type { PayloadDoc } from '../../types.js'
 
 import './index.scss'
-import { CopyButton } from './CopyButton.js'
-import { DownloadButton } from './DownloadButton.js'
+import { LogsFieldClient } from './index.client.js'
 
 type Props = {
   uploadSlug: string
@@ -20,7 +18,7 @@ const KB_SIZE = 1024
 const baseClass = 'vanguard-logs'
 
 const Wrapper = ({ children }: { children: ReactNode }) => (
-  <div className={`${baseClass} field-type upload`}>{children}</div>
+  <div className={`${baseClass} field-type collapsible`}>{children}</div>
 )
 
 export const LogsField: FC<Props> = async ({
@@ -49,7 +47,7 @@ export const LogsField: FC<Props> = async ({
 
   const logsDoc = logsDocFromData as PayloadDoc | undefined
 
-  const label: string = field.label ? getTranslation(field.label, i18n) : field.name
+  const label: string = field.label ? getTranslation(field.label, i18n) : 'Logs'
 
   const noFileFound = (
     <Wrapper>
@@ -61,10 +59,9 @@ export const LogsField: FC<Props> = async ({
     return noFileFound
   }
 
-  const { filename, size, url } = logsDoc
+  const { filename, filesize: size, mimeType, url } = logsDoc
 
   const fileTooLarge = size > MAX_FILESIZE_KB * KB_SIZE
-
   let logsFileValue: string | undefined
   if (!fileTooLarge) {
     try {
@@ -86,24 +83,16 @@ export const LogsField: FC<Props> = async ({
   }
 
   return (
-    <Wrapper>
-      <aside className={`${baseClass}__controls`}>
-        <Link href={url}>{filename}</Link>
-        <DownloadButton
-          className={`${baseClass}__download-btn`}
-          fieldValue={logsFileValue}
-          filename={filename}
-        />
-        <CopyButton className={`${baseClass}__copy-btn`} fieldValue={logsFileValue} />
-      </aside>
-      {fileTooLarge ? null : (
-        <TextareaInput
-          path={path}
-          readOnly
-          style={{ maxHeight: 480, overflowY: 'auto' }}
-          value={logsFileValue}
-        />
-      )}
-    </Wrapper>
+    <LogsFieldClient
+      className={baseClass}
+      filename={filename}
+      fileTooLarge={fileTooLarge}
+      label={label}
+      mimeType={mimeType}
+      path={path}
+      size={size}
+      url={url}
+      value={logsFileValue}
+    />
   )
 }

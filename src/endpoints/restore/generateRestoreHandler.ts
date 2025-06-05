@@ -1,5 +1,3 @@
-import type { VanguardPluginConfig } from 'src/types.js'
-
 import { status as httpStatus } from 'http-status'
 import {
   type CollectionConfig,
@@ -10,7 +8,9 @@ import {
   type TypeWithID,
 } from 'payload'
 
-import { createBackupService } from '../../adapters/backupServiceFactory.js'
+import type { VanguardPluginConfig } from '../../types.js'
+
+import { createBackupService } from '../../adapters/backupService/create.js'
 
 export type RestoreHandlerArgs = {
   backupCollection: CollectionConfig
@@ -26,13 +26,12 @@ export type RestoreHandlerResponse = {
 
 export const generateRestoreHandler = ({
   backupCollection,
-  config,
   pluginConfig,
   uploadCollection,
 }: RestoreHandlerArgs): PayloadHandler => {
-  const backupSlug = backupCollection.slug
-  const uploadSlug = uploadCollection.slug
   return async (req) => {
+    const backupSlug = backupCollection.slug
+    const uploadSlug = uploadCollection.slug
     const payload = req.payload
     const t = req.t
 
@@ -66,6 +65,7 @@ export const generateRestoreHandler = ({
       const doc = await backupService.restore({
         id,
         backupSlug,
+        pluginConfig,
         req,
         uploadSlug,
       })

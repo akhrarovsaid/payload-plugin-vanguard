@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import type { VanguardPluginConfig } from './types.js'
+import type { VanguardPluginConfig } from '../../types.js'
 
 export const getUploadCollection = ({
   pluginConfig,
@@ -9,10 +9,8 @@ export const getUploadCollection = ({
 }): CollectionConfig => {
   const { overrideUploadCollection } = pluginConfig
 
-  const slug = 'vanguard-files'
-
   const collection: CollectionConfig = {
-    slug,
+    slug: 'vanguard-files',
     access: {
       create: () => false,
     },

@@ -1,5 +1,5 @@
 export enum BackupStatus {
   FAILURE = 'failure',
-  IN_PROGRESS = 'inProgress',
+  IN_PROGRESS = 'pending',
   SUCCESS = 'success',
 }

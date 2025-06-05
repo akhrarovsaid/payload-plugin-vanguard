@@ -6,8 +6,9 @@ type Props = {
   restored?: boolean
 }
 
-export const RestoredPill: FC<Props> = ({ restored }) => (
-  <Pill alignIcon="left" pillStyle="light-gray" size="small">
-    {restored ? 'Previously Restored' : 'Unrestored'}
-  </Pill>
-)
+export const RestoredPill: FC<Props> = ({ restored }) =>
+  restored ? (
+    <Pill alignIcon="left" pillStyle="light-gray" size="small">
+      Restored
+    </Pill>
+  ) : null

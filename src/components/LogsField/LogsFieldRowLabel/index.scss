@@ -1,0 +1,12 @@
+@import '~@payloadcms/ui/scss';
+
+@layer payload-default {
+  .vanguard-logs-rowlabel {
+    display: flex;
+    gap: calc(var(--base) / 4);
+
+    &--filesize {
+      color: var(--theme-elevation-500);
+    }
+  }
+}

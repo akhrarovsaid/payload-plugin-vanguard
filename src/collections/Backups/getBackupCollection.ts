@@ -1,13 +1,13 @@
 import type { CollectionConfig, Config } from 'payload'
 
-import type { VanguardPluginConfig } from './types.js'
+import type { VanguardPluginConfig } from '../../types.js'
 
-import { defaultBackupEndpointPath } from './endpoints/backup/defaults.js'
-import { defaultRestoreEndpointPath } from './endpoints/restore/defaults.js'
-import { getLogsField } from './fields/getLogsField.js'
+import { defaultBackupEndpointPath } from '../../endpoints/backup/defaults.js'
+import { defaultRestoreEndpointPath } from '../../endpoints/restore/defaults.js'
+import { logsField } from '../../fields/logsField.js'
+import { BackupMethod } from '../../utilities/backupMethod.js'
+import { BackupStatus } from '../../utilities/backupStatus.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
-import { BackupMethod } from './utilities/backupMethod.js'
-import { BackupStatus } from './utilities/backupStatus.js'
 
 export const getBackupCollection = ({
   config,
@@ -123,16 +123,8 @@ export const getBackupCollection = ({
           },
           {
             fields: [
-              {
-                type: 'collapsible',
-                fields: [getLogsField({ name: 'backupLogs', uploadSlug })],
-                label: 'Backup Logs',
-              },
-              {
-                type: 'collapsible',
-                fields: [getLogsField({ name: 'restoreLogs', uploadSlug })],
-                label: 'Restore Logs',
-              },
+              logsField({ name: 'backupLogs', label: 'Backup Logs', uploadSlug }),
+              logsField({ name: 'restoreLogs', label: 'Restore Logs', uploadSlug }),
             ],
             label: 'Logs',
           },
@@ -142,6 +134,9 @@ export const getBackupCollection = ({
         name: 'status',
         type: 'select',
         admin: {
+          components: {
+            Cell: 'payload-plugin-vanguard/rsc#StatusBarCell',
+          },
           hidden: true,
           readOnly: true,
         },

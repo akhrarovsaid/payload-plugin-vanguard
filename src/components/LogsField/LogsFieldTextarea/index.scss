@@ -1,0 +1,17 @@
+@import '~@payloadcms/ui/scss';
+
+@layer payload-default {
+  .vanguard-logs-textarea {
+    overflow-y: auto;
+    max-height: 480;
+    
+    & textarea {
+      padding-inline: var(--base);
+    }
+  
+    &__placeholder {
+      color: var(--theme-elevation-500);
+      padding: var(--base);
+    }
+  }
+}

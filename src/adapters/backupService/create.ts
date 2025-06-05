@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import type { BackupServiceAdapter } from './types.js'
 
-import { mongodbAdapter } from './mongodbAdapter.js'
+import { mongodbAdapter } from './mongodb/index.js'
 
 export const createBackupService = (req: PayloadRequest): BackupServiceAdapter => {
   const packageName = req.payload.db.packageName

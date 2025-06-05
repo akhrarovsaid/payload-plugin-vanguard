@@ -2,10 +2,10 @@ import type { Config } from 'payload'
 
 import type { VanguardPluginConfig } from './types.js'
 
+import { getBackupCollection } from './collections/Backups/getBackupCollection.js'
+import { getUploadCollection } from './collections/Uploads/getUploadCollection.js'
 import { getBackupEndpoint } from './endpoints/backup/getBackupEndpoint.js'
 import { getRestoreEndpoint } from './endpoints/restore/getRestoreEndpoint.js'
-import { getBackupCollection } from './getBackupCollection.js'
-import { getUploadCollection } from './getUploadCollection.js'
 
 export const vanguardPlugin =
   (pluginConfig: VanguardPluginConfig) =>

@@ -1,5 +1,3 @@
-import type { VanguardPluginConfig } from 'src/types.js'
-
 import { status as httpStatus } from 'http-status'
 import {
   type CollectionConfig,
@@ -10,7 +8,9 @@ import {
   type TypeWithID,
 } from 'payload'
 
-import { createBackupService } from '../../adapters/backupServiceFactory.js'
+import type { VanguardPluginConfig } from '../../types.js'
+
+import { createBackupService } from '../../adapters/backupService/create.js'
 
 export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
@@ -26,11 +26,12 @@ export type BackupHandlerResponse = {
 
 export const generateBackupHandler = ({
   backupCollection,
+  pluginConfig,
   uploadCollection,
 }: BackupHandlerArgs): PayloadHandler => {
-  const backupSlug = backupCollection.slug
-  const uploadSlug = uploadCollection.slug
   return async (req) => {
+    const backupSlug = backupCollection.slug
+    const uploadSlug = uploadCollection.slug
     const t = req.t
 
     const headers = headersWithCors({ headers: new Headers(), req })
@@ -50,6 +51,7 @@ export const generateBackupHandler = ({
     try {
       const doc = await backupService.backup({
         backupSlug,
+        pluginConfig,
         req,
         uploadSlug,
       })
@@ -65,7 +67,10 @@ export const generateBackupHandler = ({
       )
     } catch (_err) {
       const err = _err as Error
-      return Response.json({ message: err.message }, { headers, status: 500 })
+      return Response.json(
+        { message: err.message },
+        { headers, status: httpStatus.INTERNAL_SERVER_ERROR },
+      )
     }
   }
 }

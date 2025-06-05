@@ -1,0 +1,13 @@
+@import '~@payloadcms/ui/scss';
+
+@layer payload-default {
+  .vanguard-logs-row-actions {
+    & .vanguard-logs-kebab-pill {
+      padding: calc(var(--base) * 0.2);
+    }
+
+    & .vanguard-logs-kebab-pill--icon {
+      rotate: 90deg;
+    }
+  }
+}
