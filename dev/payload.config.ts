@@ -1,4 +1,5 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
@@ -27,7 +28,7 @@ const buildConfigWithMemoryDB = async () => {
       },
     })
 
-    process.env.DATABASE_URI = `${memoryDB.getUri()}&retryWrites=true`
+    process.env.MONGO_URI = `${memoryDB.getUri()}&retryWrites=true`
   }
 
   return buildConfig({
@@ -60,15 +61,22 @@ const buildConfigWithMemoryDB = async () => {
         },
       },
     ],
-    db: mongooseAdapter({
-      url: process.env.DATABASE_URI || '',
-    }),
+    db:
+      process.env.DB_TYPE === 'mongo'
+        ? mongooseAdapter({
+            url: process.env.MONGO_URI || '',
+          })
+        : postgresAdapter({
+            pool: {
+              connectionString: process.env.POSTGRES_URI || '',
+            },
+          }),
     editor: lexicalEditor(),
     email: testEmailAdapter,
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [vanguardPlugin({})],
+    plugins: [vanguardPlugin({ debug: true })],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

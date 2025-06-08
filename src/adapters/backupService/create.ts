@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import type { BackupServiceAdapter } from './types.js'
 
 import { mongodbAdapter } from './mongodb/index.js'
+import { postgresAdapter } from './postgres/index.js'
 
 export const createBackupService = (req: PayloadRequest): BackupServiceAdapter => {
   const packageName = req.payload.db.packageName
@@ -11,10 +12,10 @@ export const createBackupService = (req: PayloadRequest): BackupServiceAdapter =
     case 'mongodb': {
       return mongodbAdapter
     }
-    /* case 'postgres':
+    case 'postgres':
     case 'vercel-postgres': {
-      return 
-    } */
+      return postgresAdapter
+    }
     /* case 'sqlite': {
       return
     } */

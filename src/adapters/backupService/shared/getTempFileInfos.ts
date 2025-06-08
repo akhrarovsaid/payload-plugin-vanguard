@@ -14,21 +14,40 @@ import { getDBName } from '../../../utilities/getDBName.js'
 import { getUTCTimestamp } from '../../../utilities/getUTCTimestamp.js'
 
 type Args = {
+  extensions?: {
+    archive?: string
+    logs?: string
+  }
   generateFilename?: GenerateFilenameFn
+  operation: 'backup' | 'restore'
   payload: BasePayload
 }
 
 export async function getTempFileInfos({
+  extensions = { archive: 'gz', logs: 'log' },
   generateFilename = defaultGenerateFilename,
+  operation,
   payload,
 }: Args): Promise<TempFileInfos> {
   const dbName = getDBName({ payload })
   const timestamp = getUTCTimestamp()
 
-  const archiveFileName = await generateFilename({ dbName, extension: 'gz', payload, timestamp })
+  const archiveFileName = await generateFilename({
+    dbName,
+    extension: extensions.archive ?? 'gz',
+    operation,
+    payload,
+    timestamp,
+  })
   const archiveFilePath = path.join(os.tmpdir(), archiveFileName)
 
-  const logsFileName = await generateFilename({ dbName, extension: 'log', payload, timestamp })
+  const logsFileName = await generateFilename({
+    dbName,
+    extension: extensions.logs ?? 'log',
+    operation,
+    payload,
+    timestamp,
+  })
   const logsFilePath = path.join(os.tmpdir(), logsFileName)
 
   const archive: TempFileInfo = {
@@ -50,7 +69,8 @@ export async function getTempFileInfos({
 export function defaultGenerateFilename({
   dbName,
   extension,
+  operation,
   timestamp,
 }: GenerateFilenameFnArgs): string {
-  return `${dbName}_${timestamp}.${extension}`
+  return `${operation}_${dbName}_${timestamp}.${extension}`
 }

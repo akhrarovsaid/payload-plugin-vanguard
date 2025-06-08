@@ -10,17 +10,19 @@ export type OperationContextArgs<
   runOperation: (args: OperationArgs) => Promise<OperationResult>
 } & ContextType
 
-export type BackupAdapterArgs = {
+export type BaseBackupServiceAdapterArgs = {
   backupSlug: string
   pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   uploadSlug: string
 }
+
+export type BackupAdapterArgs = BaseBackupServiceAdapterArgs
 export type BackupOperationArgs = {
   connectionString: string
   dbName: string
   tempFileInfos: TempFileInfos
-} & BackupAdapterArgs
+} & BaseBackupServiceAdapterArgs
 export type BackupOperationContextArgs = OperationContextArgs<
   BackupAdapterArgs,
   BackupOperationArgs,
@@ -34,7 +36,7 @@ export type RestoreOperationArgs = {
   req: PayloadRequest
   tempFileInfos: TempFileInfos
   url: string
-}
+} & BaseBackupServiceAdapterArgs
 export type RestoreOperationContextArgs = OperationContextArgs<
   RestoreAdapterArgs,
   RestoreOperationArgs,
@@ -62,6 +64,7 @@ export type TempFileInfos = {
 export type GenerateFilenameFnArgs = {
   dbName: string
   extension: string
+  operation: 'backup' | 'restore'
   payload: BasePayload
   timestamp: string
 }

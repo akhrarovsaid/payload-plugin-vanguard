@@ -4,10 +4,12 @@ import type { VanguardPluginConfig } from '../../types.js'
 
 import { defaultBackupEndpointPath } from '../../endpoints/backup/defaults.js'
 import { defaultRestoreEndpointPath } from '../../endpoints/restore/defaults.js'
+import { auditDateField } from '../../fields/auditDateField.js'
 import { logsField } from '../../fields/logsField.js'
 import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
+import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
 
 export const getBackupCollection = ({
   config,
@@ -24,6 +26,7 @@ export const getBackupCollection = ({
   const uploadSlug = uploadCollection.slug
 
   const deleteBackupFileHook = getDeleteBackupFileHook({ uploadSlug })
+  const deleteLogFilesHook = getDeleteLogFilesHook({ uploadSlug })
 
   const collection: CollectionConfig = {
     slug: 'vanguard-backups',
@@ -53,7 +56,17 @@ export const getBackupCollection = ({
           },
         },
       },
+      defaultColumns: [
+        'createdAt',
+        'status',
+        'method',
+        'initiatedBy',
+        'completedAt',
+        'restoredBy',
+        'restoredAt',
+      ],
       hidden: pluginConfig.disabled,
+      listSearchableFields: ['createdAt', 'initiatedBy', 'restoredBy', 'status', 'method'],
       useAsTitle: 'createdAt',
     },
     disableDuplicate: true,
@@ -83,40 +96,44 @@ export const getBackupCollection = ({
           {
             fields: [
               {
-                name: 'completedAt',
-                type: 'date',
-                admin: {
-                  date: {
-                    displayFormat: 'PPPppp',
+                type: 'group',
+                fields: [
+                  {
+                    type: 'row',
+                    fields: [
+                      auditDateField({ name: 'completedAt' }),
+                      {
+                        name: 'initiatedBy',
+                        type: 'relationship',
+                        admin: {
+                          readOnly: true,
+                        },
+                        relationTo: userSlug,
+                      },
+                    ],
                   },
-                  readOnly: true,
-                },
+                ],
+                label: 'Backup Audit',
               },
               {
-                name: 'initiatedBy',
-                type: 'relationship',
-                admin: {
-                  readOnly: true,
-                },
-                relationTo: userSlug,
-              },
-              {
-                name: 'restoredAt',
-                type: 'date',
-                admin: {
-                  date: {
-                    displayFormat: 'PPPppp',
+                type: 'group',
+                fields: [
+                  {
+                    type: 'row',
+                    fields: [
+                      auditDateField({ name: 'restoredAt' }),
+                      {
+                        name: 'restoredBy',
+                        type: 'relationship',
+                        admin: {
+                          readOnly: true,
+                        },
+                        relationTo: userSlug,
+                      },
+                    ],
                   },
-                  readOnly: true,
-                },
-              },
-              {
-                name: 'restoredBy',
-                type: 'relationship',
-                admin: {
-                  readOnly: true,
-                },
-                relationTo: userSlug,
+                ],
+                label: 'Latest Restore Audit',
               },
             ],
             label: 'Details',
@@ -155,7 +172,7 @@ export const getBackupCollection = ({
       },
     ],
     hooks: {
-      afterDelete: [deleteBackupFileHook],
+      afterDelete: [deleteBackupFileHook, deleteLogFilesHook],
     },
     labels: {
       plural: 'Database Backups',

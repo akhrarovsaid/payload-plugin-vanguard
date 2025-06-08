@@ -20,6 +20,7 @@ export async function withBackupContext({
   const { generateFilename } = pluginConfig
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
+    operation: 'backup',
     payload,
   })
   const { archive: archiveFileInfo, logs: logsFileInfo } = tempFileInfos

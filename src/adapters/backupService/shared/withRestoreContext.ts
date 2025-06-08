@@ -18,6 +18,7 @@ export async function withRestoreContext({
   const { generateFilename } = pluginConfig
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
+    operation: 'restore',
     payload,
   })
   const { logs: logFileInfo } = tempFileInfos
@@ -45,10 +46,13 @@ export async function withRestoreContext({
 
   try {
     await runOperation({
+      backupSlug,
       connectionString,
       dbName,
+      pluginConfig,
       req,
       tempFileInfos,
+      uploadSlug,
       url: `${req.origin}${url}`,
     })
   } catch (_err) {
@@ -57,23 +61,30 @@ export async function withRestoreContext({
     throw new Error(err.message)
   }
 
-  let logsDoc: PayloadDoc | undefined = undefined
+  let logsBuffer: Buffer | undefined = undefined
   try {
-    const logBuffer = await fs.promises.readFile(logFileInfo.path)
-
-    logsDoc = await payload.create({
-      collection: uploadSlug,
-      data: {},
-      file: {
-        name: logFileInfo.filename,
-        data: logBuffer,
-        mimetype: 'text/plain',
-        size: logBuffer.length,
-      },
-      req,
-    })
+    logsBuffer = await fs.promises.readFile(logFileInfo.path)
   } catch (_err) {
-    payload.logger.warn(_err, `Failed to create/read log file: ${logFileInfo.path}`)
+    payload.logger.warn(_err, `Failed to read log file: ${logFileInfo.path}`)
+  }
+
+  let logsDoc: PayloadDoc | undefined = undefined
+  if (logsBuffer) {
+    try {
+      logsDoc = await payload.create({
+        collection: uploadSlug,
+        data: {},
+        file: {
+          name: logFileInfo.filename,
+          data: logsBuffer,
+          mimetype: 'text/plain',
+          size: logsBuffer.length,
+        },
+        req,
+      })
+    } catch (_err) {
+      payload.logger.warn(_err, `Failed to create log file: ${logFileInfo.path}`)
+    }
   }
 
   try {

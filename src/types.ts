@@ -15,6 +15,7 @@ export type VanguardPluginConfig = {
   disabled?: boolean
   generateFilename?: GenerateFilenameFn
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
+  overrideHistoryCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideUploadCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   routes?: {
     backup?: string
