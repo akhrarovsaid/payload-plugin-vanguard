@@ -10,6 +10,7 @@ import { withBackupContext } from '../shared/withBackupContext.js'
 export async function runOperation({
   backupSlug,
   connectionString,
+  historySlug,
   req: { payload },
   tempFileInfos,
   uploadSlug,
@@ -19,7 +20,11 @@ export async function runOperation({
     const compressedStream = fs.createWriteStream(tempFileInfos.archive.path)
     const logStream = fs.createWriteStream(tempFileInfos.logs.path, { flags: 'a' })
 
-    const excludeTables = [toSnakeCase(backupSlug), toSnakeCase(uploadSlug)]
+    const excludeTables = [
+      toSnakeCase(backupSlug),
+      toSnakeCase(uploadSlug),
+      toSnakeCase(historySlug),
+    ]
 
     const pgArgs = [
       `--dbname=${connectionString}`,

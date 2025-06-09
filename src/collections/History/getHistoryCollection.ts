@@ -3,6 +3,7 @@ import type { CollectionConfig, Config } from 'payload'
 import type { VanguardPluginConfig } from '../../types.js'
 
 import { auditDateField } from '../../fields/auditDateField.js'
+import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { OperationType } from '../../utilities/operationType.js'
 import { defaultUserSlug } from '../shared.js'
@@ -10,32 +11,46 @@ import { defaultUserSlug } from '../shared.js'
 export const getHistoryCollection = ({
   config,
   pluginConfig,
+  uploadCollection,
 }: {
   config: Config
   pluginConfig: VanguardPluginConfig
+  uploadCollection: CollectionConfig
 }): CollectionConfig => {
   const { overrideHistoryCollection } = pluginConfig
 
   const userSlug = config.admin?.user ?? defaultUserSlug
+  const uploadSlug = uploadCollection.slug
 
   const collection: CollectionConfig = {
     slug: 'vanguard-history',
     access: {
       create: () => false,
+      delete: () => false,
+      update: () => false,
     },
     admin: {
-      defaultColumns: [defaultUserSlug, 'operation', 'status', 'startedAt', 'completedAt'],
+      defaultColumns: ['user', 'method', 'operation', 'status', 'logs', 'startedAt', 'completedAt'],
       hidden: !pluginConfig.debug,
     },
     disableDuplicate: true,
     fields: [
       {
-        name: defaultUserSlug,
+        name: 'user',
         type: 'relationship',
         admin: {
           readOnly: true,
         },
         relationTo: userSlug,
+      },
+      {
+        name: 'method',
+        type: 'select',
+        admin: {
+          readOnly: true,
+        },
+        defaultValue: BackupMethod.MANUAL,
+        options: [BackupMethod.MANUAL, BackupMethod.AUTO],
       },
       {
         name: 'operation',
@@ -54,6 +69,21 @@ export const getHistoryCollection = ({
         },
         defaultValue: BackupStatus.IN_PROGRESS,
         options: [BackupStatus.SUCCESS, BackupStatus.FAILURE, BackupStatus.IN_PROGRESS],
+      },
+      {
+        name: 'logs',
+        type: 'upload',
+        admin: {
+          readOnly: true,
+        },
+        relationTo: uploadSlug,
+      },
+      {
+        name: 'runId',
+        type: 'text',
+        admin: {
+          readOnly: true,
+        },
       },
       auditDateField({ name: 'startedAt' }),
       auditDateField({ name: 'completedAt' }),

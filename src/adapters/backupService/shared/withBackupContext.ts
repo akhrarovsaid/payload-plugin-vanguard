@@ -6,11 +6,13 @@ import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
 import { cleanup } from './cleanup.js'
 import { flushLogs } from './flushLogs.js'
+import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 export async function withBackupContext({
   backupSlug,
+  historySlug,
   pluginConfig,
   req: { payload, t, user },
   req,
@@ -26,6 +28,7 @@ export async function withBackupContext({
   const { archive: archiveFileInfo, logs: logsFileInfo } = tempFileInfos
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
+  const runId = generateRunId()
 
   let backupDoc!: PayloadDoc
   try {
@@ -33,6 +36,7 @@ export async function withBackupContext({
       collection: backupSlug,
       data: {
         initiatedBy: user,
+        latestRunId: runId,
       },
       req,
     })
@@ -51,6 +55,7 @@ export async function withBackupContext({
       backupSlug,
       connectionString,
       dbName,
+      historySlug,
       pluginConfig,
       req,
       tempFileInfos,

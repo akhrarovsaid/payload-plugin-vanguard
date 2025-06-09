@@ -12,6 +12,7 @@ export type OperationContextArgs<
 
 export type BaseBackupServiceAdapterArgs = {
   backupSlug: string
+  historySlug: string
   pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   uploadSlug: string

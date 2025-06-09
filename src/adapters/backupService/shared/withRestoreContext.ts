@@ -4,11 +4,13 @@ import type { PayloadDoc, RestoreOperationContextArgs } from '../types.js'
 
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
+import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
 
 export async function withRestoreContext({
   id,
   backupSlug,
+  historySlug,
   pluginConfig,
   req: { payload, user },
   req,
@@ -24,12 +26,16 @@ export async function withRestoreContext({
   const { logs: logFileInfo } = tempFileInfos
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
+  const runId = generateRunId()
 
   let backupDoc: PayloadDoc
   try {
-    backupDoc = await payload.findByID({
+    backupDoc = await payload.update({
       id,
       collection: backupSlug,
+      data: {
+        latestRunId: runId,
+      },
       req,
       select: {
         backup: true,
@@ -49,6 +55,7 @@ export async function withRestoreContext({
       backupSlug,
       connectionString,
       dbName,
+      historySlug,
       pluginConfig,
       req,
       tempFileInfos,

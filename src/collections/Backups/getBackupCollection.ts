@@ -10,13 +10,16 @@ import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
 import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
+import { getPushHistoryHook } from './hooks/getPushHistoryHook.js'
 
 export const getBackupCollection = ({
   config,
+  historyCollection,
   pluginConfig,
   uploadCollection,
 }: {
   config: Config
+  historyCollection: CollectionConfig
   pluginConfig: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
@@ -24,7 +27,10 @@ export const getBackupCollection = ({
 
   const userSlug = config.admin?.user ?? 'users'
   const uploadSlug = uploadCollection.slug
+  const historySlug = historyCollection.slug
+  const archiveFieldName = 'archive'
 
+  const pushHistoryHook = getPushHistoryHook({ historySlug })
   const deleteBackupFileHook = getDeleteBackupFileHook({ uploadSlug })
   const deleteLogFilesHook = getDeleteLogFilesHook({ uploadSlug })
 
@@ -135,6 +141,23 @@ export const getBackupCollection = ({
                 ],
                 label: 'Latest Restore Audit',
               },
+              {
+                type: 'group',
+                fields: [
+                  {
+                    name: 'history',
+                    type: 'join',
+                    admin: {
+                      allowCreate: false,
+                      disableListColumn: true,
+                    },
+                    collection: historySlug,
+                    label: false,
+                    on: archiveFieldName,
+                  },
+                ],
+                label: 'History',
+              },
             ],
             label: 'Details',
           },
@@ -154,7 +177,7 @@ export const getBackupCollection = ({
           components: {
             Cell: 'payload-plugin-vanguard/rsc#StatusBarCell',
           },
-          hidden: true,
+          hidden: !pluginConfig.debug,
           readOnly: true,
         },
         defaultValue: BackupStatus.IN_PROGRESS,
@@ -164,14 +187,23 @@ export const getBackupCollection = ({
         name: 'method',
         type: 'select',
         admin: {
-          hidden: true,
+          hidden: !pluginConfig.debug,
           readOnly: true,
         },
         defaultValue: BackupMethod.MANUAL,
         options: [BackupMethod.MANUAL, BackupMethod.AUTO],
       },
+      {
+        name: 'latestRunId',
+        type: 'text',
+        admin: {
+          hidden: !pluginConfig.debug,
+          readOnly: true,
+        },
+      },
     ],
     hooks: {
+      afterChange: [pushHistoryHook],
       afterDelete: [deleteBackupFileHook, deleteLogFilesHook],
     },
     labels: {
@@ -179,6 +211,15 @@ export const getBackupCollection = ({
       singular: 'Database Backup',
     },
   }
+
+  historyCollection.fields.push({
+    name: archiveFieldName,
+    type: 'relationship',
+    admin: {
+      readOnly: true,
+    },
+    relationTo: collection.slug,
+  })
 
   if (typeof overrideBackupCollection === 'function') {
     return overrideBackupCollection({ collection })
