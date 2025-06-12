@@ -3,6 +3,8 @@ import fs from 'fs'
 
 import type { BackupAdapterArgs, BackupOperationArgs } from '../types.js'
 
+import { commandMap } from '../shared/commandMap.js'
+import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { withBackupContext } from '../shared/withBackupContext.js'
 
 export async function runOperation({
@@ -18,7 +20,9 @@ export async function runOperation({
     const archiveStream = fs.createWriteStream(tempFileInfos.archive.path)
     const logStream = fs.createWriteStream(tempFileInfos.logs.path, { flags: 'a' })
 
-    const dumpProcess = spawn('mongodump', [
+    const command = commandMap[databasePackageMap.mongodb].backup
+
+    const dumpProcess = spawn(command, [
       `--uri=${connectionString}`,
       `--db=${dbName}`,
       '--archive',

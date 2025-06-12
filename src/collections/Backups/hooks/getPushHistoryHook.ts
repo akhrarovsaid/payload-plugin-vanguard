@@ -46,7 +46,7 @@ export const getPushHistoryHook = ({
       })
     } else {
       const { backupLogs, restoreLogs } = doc
-      console.log('afterChange: ', data)
+
       await payload.update({
         collection: historySlug,
         data: {
@@ -55,7 +55,6 @@ export const getPushHistoryHook = ({
         },
         depth: 0,
         req,
-        select: {},
         where: {
           runId: {
             equals: previousDoc.latestRunId,

@@ -1,8 +1,14 @@
+import type { ReadableStream } from 'stream/web'
+
 import { spawn } from 'child_process'
-import fs from 'fs'
+import { createWriteStream } from 'fs'
+import { Readable } from 'stream'
+import { pipeline } from 'stream/promises'
 
 import type { RestoreAdapterArgs, RestoreOperationArgs } from '../types.js'
 
+import { commandMap } from '../shared/commandMap.js'
+import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { withRestoreContext } from '../shared/withRestoreContext.js'
 
 export async function runOperation({
@@ -12,37 +18,51 @@ export async function runOperation({
   tempFileInfos: { logs: logsFileInfo },
   url,
 }: RestoreOperationArgs): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const logStream = fs.createWriteStream(logsFileInfo.path)
-    const curl = spawn('curl', [`${payload.config.serverURL}${url}`])
+  const logStream = createWriteStream(logsFileInfo.path)
+  const archiveURL = `${payload.config.serverURL}${url}`
 
-    const restoreProcess = spawn('mongorestore', [
+  try {
+    const response = await fetch(archiveURL)
+
+    if (!response.ok || !response.body) {
+      throw new Error(`Failed to fetch archive from ${archiveURL}: ${response.statusText}`)
+    }
+
+    const readableArchive = Readable.fromWeb(response.body as ReadableStream)
+
+    const command = commandMap[databasePackageMap.mongodb].restore
+
+    const restoreProcess = spawn(command, [
       `--uri=${connectionString}`,
-      `--nsInclude="${dbName}.*"`,
+      `--nsInclude=${dbName}.*`,
       '--gzip',
       '--archive',
     ])
 
-    curl.stdout.pipe(restoreProcess.stdin)
+    restoreProcess.stderr.pipe(logStream)
 
-    restoreProcess.stderr.on('data', (data) => {
-      logStream.write(data)
-    })
+    await pipeline(readableArchive, restoreProcess.stdin)
 
-    restoreProcess.on('close', (code) => {
-      logStream.end()
-      if (code !== 0) {
-        reject(new Error(`mongorestore failed with code ${code}`))
-      } else {
-        resolve()
-      }
-    })
+    await new Promise<void>((resolve, reject) => {
+      restoreProcess.on('close', (codeFromProcess) => {
+        logStream.end()
+        const code = codeFromProcess ?? 1
+        if (code !== 0) {
+          reject(new Error(`mongorestore failed with code ${code}`))
+        } else {
+          resolve()
+        }
+      })
 
-    restoreProcess.on('error', (err) => {
-      logStream.end()
-      reject(err)
+      restoreProcess.on('error', (err) => {
+        logStream.end()
+        reject(err)
+      })
     })
-  })
+  } catch (err) {
+    logStream.end()
+    throw err
+  }
 }
 
 export async function restore(args: RestoreAdapterArgs) {

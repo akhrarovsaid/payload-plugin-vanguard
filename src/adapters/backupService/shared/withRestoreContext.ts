@@ -4,9 +4,13 @@ import type { PayloadDoc, RestoreOperationContextArgs } from '../types.js'
 
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
+import { OperationType } from '../../../utilities/operationType.js'
+import { commandExists } from './commandExists.js'
+import { getCommand } from './commandMap.js'
 import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
 
+// TODO:: reportAndThrow for restores
 export async function withRestoreContext({
   id,
   backupSlug,
@@ -17,13 +21,25 @@ export async function withRestoreContext({
   runOperation,
   uploadSlug,
 }: RestoreOperationContextArgs) {
+  const packageName = payload.db.packageName
+  const { restore: restoreCommand } = getCommand({ packageName })
+  const hasCommandAccess = await commandExists(restoreCommand)
+
+  if (!hasCommandAccess) {
+    const message = `Restore aborted: command not found '${restoreCommand}'`
+    payload.logger.error(message)
+    throw new Error(message)
+  }
+
   const { generateFilename } = pluginConfig
+  const operation = OperationType.RESTORE
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
-    operation: 'restore',
+    operation,
     payload,
   })
   const { logs: logFileInfo } = tempFileInfos
+
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
   const runId = generateRunId()
@@ -48,8 +64,7 @@ export async function withRestoreContext({
     throw new Error(message)
   }
 
-  const url = backupDoc?.backup.url
-
+  const url = `${req.origin}${backupDoc?.backup.url}`
   try {
     await runOperation({
       backupSlug,
@@ -60,7 +75,7 @@ export async function withRestoreContext({
       req,
       tempFileInfos,
       uploadSlug,
-      url: `${req.origin}${url}`,
+      url,
     })
   } catch (_err) {
     const err = _err as Error

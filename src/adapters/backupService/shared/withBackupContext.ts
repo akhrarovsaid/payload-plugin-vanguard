@@ -4,7 +4,10 @@ import type { BackupOperationContextArgs } from '../types.js'
 import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
+import { OperationType } from '../../../utilities/operationType.js'
 import { cleanup } from './cleanup.js'
+import { commandExists } from './commandExists.js'
+import { getCommand } from './commandMap.js'
 import { flushLogs } from './flushLogs.js'
 import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
@@ -19,10 +22,25 @@ export async function withBackupContext({
   runOperation,
   uploadSlug,
 }: BackupOperationContextArgs) {
+  const operation = OperationType.BACKUP
+
+  const packageName = payload.db.packageName
+  const { backup: backupCommand } = getCommand({ packageName })
+  const hasCommandAccess = await commandExists(backupCommand)
+
+  if (!hasCommandAccess) {
+    await reportAndThrow({
+      backupSlug,
+      error: new Error(),
+      message: `Backup aborted: cannot execute command '${backupCommand}'`,
+      req,
+    })
+  }
+
   const { generateFilename } = pluginConfig
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
-    operation: 'backup',
+    operation,
     payload,
   })
   const { archive: archiveFileInfo, logs: logsFileInfo } = tempFileInfos

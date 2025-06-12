@@ -9,6 +9,8 @@ import zlib from 'zlib'
 
 import type { RestoreAdapterArgs, RestoreOperationArgs } from '../types.js'
 
+import { commandMap } from '../shared/commandMap.js'
+import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { resyncSequences } from '../shared/resyncSequences.js'
 import { withRestoreContext } from '../shared/withRestoreContext.js'
 
@@ -42,7 +44,9 @@ export async function runOperation({
 
     await pipeline(readableDump, gunzip, outStream)
 
-    const restoreProcess = spawn('pg_restore', [
+    const command = commandMap[databasePackageMap.mongodb].restore
+
+    const restoreProcess = spawn(command, [
       `--dbname=${connectionString}`,
       '--verbose',
       '--no-owner',
@@ -72,7 +76,8 @@ export async function runOperation({
 
     await fs.promises.unlink(extractedPath)
 
-    // Reset the sequence for vanguard files to prevent error on uploading logs
+    // Reset the sequence for vanguard collections to prevent
+    // error on uploading logs/pushing history
     if (payload.db.idType !== 'uuid') {
       await resyncSequences({ collectionSlugs: [uploadSlug, backupSlug, historySlug], payload })
     }

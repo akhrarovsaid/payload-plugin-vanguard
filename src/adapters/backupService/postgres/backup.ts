@@ -5,6 +5,8 @@ import zlib from 'zlib'
 import type { BackupAdapterArgs, BackupOperationArgs } from '../types.js'
 
 import { toSnakeCase } from '../../../utilities/toSnakeCase.js'
+import { commandMap } from '../shared/commandMap.js'
+import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { withBackupContext } from '../shared/withBackupContext.js'
 
 export async function runOperation({
@@ -34,7 +36,9 @@ export async function runOperation({
       ...excludeTables.map((t) => `--exclude-table=${t}`),
     ]
 
-    const dumpProcess = spawn('pg_dump', pgArgs)
+    const command = commandMap[databasePackageMap.postgres].backup
+
+    const dumpProcess = spawn(command, pgArgs)
 
     dumpProcess.stderr.pipe(logStream)
 
