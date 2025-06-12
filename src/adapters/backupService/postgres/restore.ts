@@ -44,7 +44,7 @@ export async function runOperation({
 
     await pipeline(readableDump, gunzip, outStream)
 
-    const command = commandMap[databasePackageMap.mongodb].restore
+    const command = commandMap[databasePackageMap.postgres].restore
 
     const restoreProcess = spawn(command, [
       `--dbname=${connectionString}`,

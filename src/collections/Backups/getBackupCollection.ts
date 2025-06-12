@@ -8,6 +8,7 @@ import { auditDateField } from '../../fields/auditDateField.js'
 import { logsField } from '../../fields/logsField.js'
 import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
+import { OperationType } from '../../utilities/operationType.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
 import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
 import { getPushHistoryHook } from './hooks/getPushHistoryHook.js'
@@ -200,6 +201,16 @@ export const getBackupCollection = ({
           hidden: !pluginConfig.debug,
           readOnly: true,
         },
+      },
+      {
+        name: 'latestRunOperation',
+        type: 'select',
+        admin: {
+          hidden: !pluginConfig.debug,
+          readOnly: true,
+        },
+        defaultValue: OperationType.BACKUP,
+        options: [OperationType.BACKUP, OperationType.RESTORE],
       },
     ],
     hooks: {

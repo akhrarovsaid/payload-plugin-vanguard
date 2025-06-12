@@ -17,7 +17,7 @@ export const getHistoryCollection = ({
   pluginConfig: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
-  const { overrideHistoryCollection } = pluginConfig
+  const { debug, overrideHistoryCollection } = pluginConfig
 
   const userSlug = config.admin?.user ?? defaultUserSlug
   const uploadSlug = uploadCollection.slug
@@ -25,13 +25,13 @@ export const getHistoryCollection = ({
   const collection: CollectionConfig = {
     slug: 'vanguard-history',
     access: {
-      create: () => false,
-      delete: () => false,
-      update: () => false,
+      create: () => Boolean(debug),
+      delete: () => Boolean(debug),
+      update: () => Boolean(debug),
     },
     admin: {
       defaultColumns: ['user', 'method', 'operation', 'status', 'logs', 'startedAt', 'completedAt'],
-      hidden: !pluginConfig.debug,
+      hidden: !debug,
     },
     disableDuplicate: true,
     fields: [

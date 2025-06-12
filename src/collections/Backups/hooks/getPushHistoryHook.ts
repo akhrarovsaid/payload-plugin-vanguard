@@ -2,7 +2,6 @@ import type { CollectionAfterChangeHook } from 'payload'
 
 import { OperationType } from '../../../utilities/operationType.js'
 
-// TODO: Fix this not working on restore
 export const getPushHistoryHook = ({
   historySlug,
 }: {
@@ -14,24 +13,27 @@ export const getPushHistoryHook = ({
       completedAt,
       createdAt,
       initiatedBy,
-      latestRunId,
+      latestRunId: runId,
+      latestRunOperation: operation,
       method,
+      restoredAt,
       restoredBy,
       status,
+      updatedAt,
     } = doc
 
-    const isNewRun =
-      operationFromProps === 'create' || (previousDoc && previousDoc.latestRunId !== latestRunId)
-
-    const operation = !isNewRun ? OperationType.BACKUP : OperationType.RESTORE
+    const isCreate = operationFromProps === 'create'
+    const isPreviousRunIdSame = Boolean(previousDoc) && previousDoc.latestRunId === runId
+    const isNewRun = isCreate || !isPreviousRunIdSame
+    const isBackup = operation === OperationType.BACKUP
 
     const data = {
       archive,
-      completedAt,
+      completedAt: isBackup ? completedAt : restoredAt,
       method,
       operation,
-      runId: latestRunId,
-      startedAt: createdAt,
+      runId,
+      startedAt: isBackup ? createdAt : updatedAt,
       status,
       user: restoredBy || initiatedBy,
     }
@@ -46,7 +48,6 @@ export const getPushHistoryHook = ({
       })
     } else {
       const { backupLogs, restoreLogs } = doc
-
       await payload.update({
         collection: historySlug,
         data: {
@@ -57,7 +58,7 @@ export const getPushHistoryHook = ({
         req,
         where: {
           runId: {
-            equals: previousDoc.latestRunId,
+            equals: runId,
           },
         },
       })

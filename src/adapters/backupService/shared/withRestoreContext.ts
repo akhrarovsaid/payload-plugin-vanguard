@@ -51,12 +51,9 @@ export async function withRestoreContext({
       collection: backupSlug,
       data: {
         latestRunId: runId,
+        latestRunOperation: operation,
       },
       req,
-      select: {
-        backup: true,
-        status: true,
-      },
     })
   } catch (_err) {
     const message = req.t('error:notFound')
