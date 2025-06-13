@@ -48,7 +48,7 @@ export async function runOperation({
         logStream.end()
         const code = codeFromProcess ?? 1
         if (code !== 0) {
-          reject(new Error(`mongorestore failed with code ${code}`))
+          reject(new Error(`${command} failed with code ${code}`))
         } else {
           resolve()
         }
