@@ -2,6 +2,11 @@ import type { CollectionConfig, Config } from 'payload'
 
 import type { VanguardPluginConfig } from '../../types.js'
 
+import {
+  defaultArchiveFieldName,
+  defaultBackupSlug,
+  defaultUserSlug,
+} from '../../collections/shared.js'
 import { defaultBackupEndpointPath } from '../../endpoints/backup/defaults.js'
 import { defaultRestoreEndpointPath } from '../../endpoints/restore/defaults.js'
 import { auditDateField } from '../../fields/auditDateField.js'
@@ -10,8 +15,9 @@ import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { OperationType } from '../../utilities/operationType.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
-import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
+import { getDeleteHistoryHook } from './hooks/getDeleteHistoryHook.js'
 import { getPushHistoryHook } from './hooks/getPushHistoryHook.js'
+import { getUpdateHistoryHook } from './hooks/getUpdateHistoryHook.js'
 
 export const getBackupCollection = ({
   config,
@@ -24,21 +30,24 @@ export const getBackupCollection = ({
   pluginConfig: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
-  const { overrideBackupCollection } = pluginConfig
+  const { debug, overrideBackupCollection } = pluginConfig
 
-  const userSlug = config.admin?.user ?? 'users'
+  const userSlug = config.admin?.user ?? defaultUserSlug
   const uploadSlug = uploadCollection.slug
   const historySlug = historyCollection.slug
-  const archiveFieldName = 'archive'
+  const archiveFieldName = defaultArchiveFieldName
 
   const pushHistoryHook = getPushHistoryHook({ historySlug })
+  const updateHistoryHook = getUpdateHistoryHook({ historySlug })
   const deleteBackupFileHook = getDeleteBackupFileHook({ uploadSlug })
-  const deleteLogFilesHook = getDeleteLogFilesHook({ uploadSlug })
+  const deleteHistoryHook = getDeleteHistoryHook({ archiveFieldName, historySlug })
 
-  const collection: CollectionConfig = {
-    slug: 'vanguard-backups',
+  let collection: CollectionConfig = {
+    slug: defaultBackupSlug,
     access: {
-      create: () => false,
+      create: () => Boolean(debug),
+      delete: () => Boolean(debug),
+      update: () => Boolean(debug),
     },
     admin: {
       components: {
@@ -72,7 +81,7 @@ export const getBackupCollection = ({
         'restoredBy',
         'restoredAt',
       ],
-      hidden: pluginConfig.disabled,
+      hidden: !debug,
       listSearchableFields: ['createdAt', 'initiatedBy', 'restoredBy', 'status', 'method'],
       useAsTitle: 'createdAt',
     },
@@ -215,12 +224,18 @@ export const getBackupCollection = ({
     ],
     hooks: {
       afterChange: [pushHistoryHook],
-      afterDelete: [deleteBackupFileHook, deleteLogFilesHook],
+      afterDelete: [deleteBackupFileHook],
+      beforeChange: [updateHistoryHook],
+      beforeDelete: [deleteHistoryHook],
     },
     labels: {
       plural: 'Database Backups',
       singular: 'Database Backup',
     },
+  }
+
+  if (typeof overrideBackupCollection === 'function') {
+    collection = overrideBackupCollection({ collection })
   }
 
   historyCollection.fields.push({
@@ -231,10 +246,6 @@ export const getBackupCollection = ({
     },
     relationTo: collection.slug,
   })
-
-  if (typeof overrideBackupCollection === 'function') {
-    return overrideBackupCollection({ collection })
-  }
 
   return collection
 }

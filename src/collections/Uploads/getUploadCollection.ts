@@ -2,20 +2,24 @@ import type { CollectionConfig } from 'payload'
 
 import type { VanguardPluginConfig } from '../../types.js'
 
+import { defaultUploadSlug } from '../../collections/shared.js'
+
 export const getUploadCollection = ({
   pluginConfig,
 }: {
   pluginConfig: VanguardPluginConfig
 }): CollectionConfig => {
-  const { overrideUploadCollection } = pluginConfig
+  const { debug, overrideUploadCollection } = pluginConfig
 
   const collection: CollectionConfig = {
-    slug: 'vanguard-files',
+    slug: defaultUploadSlug,
     access: {
-      create: () => false,
+      create: () => Boolean(debug),
+      delete: () => Boolean(debug),
+      update: () => Boolean(debug),
     },
     admin: {
-      hidden: !pluginConfig.debug,
+      hidden: !debug,
     },
     disableDuplicate: true,
     fields: [],

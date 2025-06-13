@@ -1,1 +1,5 @@
+export const defaultHistorySlug = 'vanguard-history'
+export const defaultUploadSlug = 'vanguard-files'
+export const defaultBackupSlug = 'vanguard-backups'
 export const defaultUserSlug = 'users'
+export const defaultArchiveFieldName = 'archive'

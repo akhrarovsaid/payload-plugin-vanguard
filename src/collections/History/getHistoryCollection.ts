@@ -6,7 +6,8 @@ import { auditDateField } from '../../fields/auditDateField.js'
 import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { OperationType } from '../../utilities/operationType.js'
-import { defaultUserSlug } from '../shared.js'
+import { defaultHistorySlug, defaultUserSlug } from '../shared.js'
+import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
 
 export const getHistoryCollection = ({
   config,
@@ -22,8 +23,10 @@ export const getHistoryCollection = ({
   const userSlug = config.admin?.user ?? defaultUserSlug
   const uploadSlug = uploadCollection.slug
 
+  const deleteLogFilesHook = getDeleteLogFilesHook({ uploadSlug })
+
   const collection: CollectionConfig = {
-    slug: 'vanguard-history',
+    slug: defaultHistorySlug,
     access: {
       create: () => Boolean(debug),
       delete: () => Boolean(debug),
@@ -88,6 +91,9 @@ export const getHistoryCollection = ({
       auditDateField({ name: 'startedAt' }),
       auditDateField({ name: 'completedAt' }),
     ],
+    hooks: {
+      beforeDelete: [deleteLogFilesHook],
+    },
   }
 
   if (typeof overrideHistoryCollection === 'function') {
