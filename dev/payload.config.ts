@@ -1,5 +1,3 @@
-import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
@@ -9,6 +7,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { devUser } from './helpers/credentials.js'
+import { getDatabaseAdapter } from './helpers/getDatabaseAdapter.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
 
@@ -61,16 +60,7 @@ const buildConfigWithMemoryDB = async () => {
         },
       },
     ],
-    db:
-      process.env.DB_TYPE === 'mongo'
-        ? mongooseAdapter({
-            url: process.env.MONGO_URI || '',
-          })
-        : postgresAdapter({
-            pool: {
-              connectionString: process.env.POSTGRES_URI || '',
-            },
-          }),
+    db: getDatabaseAdapter(),
     editor: lexicalEditor(),
     email: testEmailAdapter,
     onInit: async (payload) => {

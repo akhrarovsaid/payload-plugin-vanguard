@@ -5,11 +5,12 @@ import type { BackupServiceAdapter } from './types.js'
 import { mongodbAdapter } from './mongodb/index.js'
 import { postgresAdapter } from './postgres/index.js'
 import { databasePackageMap } from './shared/databasePackageMap.js'
+import { sqliteAdapter } from './sqlite/index.js'
 
 const adapterMap = {
   [databasePackageMap.mongodb]: mongodbAdapter,
   [databasePackageMap.postgres]: postgresAdapter,
-  /* [databasePackageMap.sqlite]: sqliteAdapter, */
+  [databasePackageMap.sqlite]: sqliteAdapter,
 }
 
 export const createBackupService = (req: PayloadRequest): BackupServiceAdapter => {
