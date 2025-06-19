@@ -58,8 +58,8 @@ export type TempFileInfo = {
   path: string
 }
 export type TempFileInfos = {
-  archive: TempFileInfo
-  logs: TempFileInfo
+  archiveFileInfo: TempFileInfo
+  logsFileInfo: TempFileInfo
 }
 
 export type GenerateFilenameFnArgs = {

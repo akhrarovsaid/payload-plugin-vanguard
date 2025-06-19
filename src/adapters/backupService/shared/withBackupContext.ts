@@ -1,157 +1,102 @@
-import type { PayloadDoc } from '../../../types.js'
-import type { BackupOperationContextArgs } from '../types.js'
+import type { BackupOperationArgs, BackupOperationContextArgs, PayloadDoc } from '../types.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
 import { OperationType } from '../../../utilities/operationType.js'
 import { cleanup } from './cleanup.js'
-import { commandExists } from './commandExists.js'
-import { getCommand } from './commandMap.js'
-import { flushLogs } from './flushLogs.js'
+import { ensureCommandExists } from './commandExists.js'
+import { executeOperation } from './executeOperation.js'
 import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
-import { reportAndThrow } from './reportAndThrow.js'
+import { uploadArchive } from './uploadArchive.js'
+import { uploadLogs } from './uploadLogs.js'
+import { upsertBackupDoc } from './upsertBackupDoc.js'
 
 export async function withBackupContext({
   backupSlug,
   historySlug,
   pluginConfig,
-  req: { payload, t, user },
+  req: { payload, user },
   req,
   runOperation,
   uploadSlug,
 }: BackupOperationContextArgs) {
   const operation = OperationType.BACKUP
+  const runId = generateRunId()
 
-  const packageName = payload.db.packageName
-  const { backup: backupCommand } = getCommand({ packageName })
-  const hasCommandAccess = await commandExists(backupCommand)
+  const connectionString = getConnectionString({ payload })
+  const dbName = getDBName({ payload })
 
-  if (!hasCommandAccess) {
-    await reportAndThrow({
-      backupSlug,
-      error: new Error(),
-      message: `Backup aborted: cannot execute command '${backupCommand}'`,
-      req,
-    })
-  }
-
+  const { packageName } = payload.db
   const { generateFilename } = pluginConfig
+
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
     operation,
     payload,
   })
-  const { archive: archiveFileInfo, logs: logsFileInfo } = tempFileInfos
-  const connectionString = getConnectionString({ payload })
-  const dbName = getDBName({ payload })
-  const runId = generateRunId()
 
-  let backupDoc!: PayloadDoc
-  try {
-    backupDoc = await payload.create({
-      collection: backupSlug,
-      data: {
-        initiatedBy: user,
-        latestRunId: runId,
-      },
-      req,
-    })
-  } catch (_err) {
-    await reportAndThrow({
-      backupSlug,
-      error: _err,
-      message: 'Backup aborted: failed to create initial doc',
-      req,
-    })
+  const operationArgs = {
+    backupSlug,
+    connectionString,
+    dbName,
+    historySlug,
+    pluginConfig,
+    req,
+    tempFileInfos,
+    uploadSlug,
   }
 
-  let fileBuffer!: Buffer
-  try {
-    fileBuffer = await runOperation({
-      backupSlug,
-      connectionString,
-      dbName,
-      historySlug,
-      pluginConfig,
-      req,
-      tempFileInfos,
-      uploadSlug,
-    })
-  } catch (_err) {
-    await reportAndThrow({
-      backupDocId: backupDoc.id,
-      backupSlug,
-      error: _err,
-      message: 'Backup failed: mongodump process error',
-      req,
-      shouldCleanup: true,
-      shouldFlushLogs: true,
-      tempFileInfos,
-    })
-  }
+  await ensureCommandExists({ backupSlug, packageName, req })
 
-  let uploadDoc!: PayloadDoc
-  try {
-    uploadDoc = await payload.create({
-      collection: uploadSlug,
-      data: {},
-      file: {
-        name: archiveFileInfo.filename,
-        data: fileBuffer,
-        mimetype: 'application/gzip',
-        size: fileBuffer.length,
-      },
-      req,
-    })
-  } catch (_err) {
-    await reportAndThrow({
-      backupDocId: backupDoc.id,
-      backupSlug,
-      error: _err,
-      message: t('error:problemUploadingFile'),
-      req,
-      shouldCleanup: true,
-      shouldFlushLogs: true,
-      tempFileInfos,
-    })
-  }
+  const backupDoc = await upsertBackupDoc({
+    backupSlug,
+    data: { initiatedBy: user, latestRunId: runId },
+    req,
+    user,
+  })
 
-  const logsDoc: PayloadDoc | undefined = await flushLogs({
-    ...logsFileInfo,
+  const buffer = await executeOperation<BackupOperationArgs, Buffer>({
+    backupDocId: backupDoc?.id,
+    operationArgs,
+    runOperation,
+  })
+
+  const archiveDoc = await uploadArchive({
+    backupDocId: backupDoc?.id,
+    backupSlug,
+    buffer,
+    req,
+    tempFileInfos,
+    uploadSlug,
+  })
+
+  const logsDoc = await uploadLogs({
+    ...tempFileInfos.logsFileInfo,
     payload,
     req,
     uploadSlug,
   })
 
-  try {
-    await payload.update({
-      id: backupDoc.id,
-      collection: backupSlug,
-      data: {
-        backup: uploadDoc.id,
-        backupLogs: logsDoc?.id,
-        completedAt: new Date().toISOString(),
-        status: BackupStatus.SUCCESS,
-      },
-      req,
-    })
-  } catch (_err) {
-    await reportAndThrow({
-      backupDocId: backupDoc.id,
-      backupLogsId: logsDoc?.id,
-      backupSlug,
-      error: _err,
-      message: 'Backup failed: update backup doc error',
-      req,
-      shouldCleanup: true,
-      shouldFlushLogs: true,
-      tempFileInfos,
-    })
-  }
-
   await cleanup({ payload, tempFileInfos })
 
-  return backupDoc
+  const data = {
+    backup: archiveDoc?.id,
+    backupLogs: logsDoc?.id,
+    completedAt: new Date().toISOString(),
+    status: BackupStatus.SUCCESS,
+  }
+
+  return upsertBackupDoc({
+    backupDocId: backupDoc?.id,
+    backupLogsId: logsDoc?.id,
+    backupSlug,
+    data,
+    req,
+    shouldCleanup: true,
+    shouldFlushLogs: true,
+    tempFileInfos,
+    user,
+  }) as Promise<PayloadDoc>
 }

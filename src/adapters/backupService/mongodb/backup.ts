@@ -17,8 +17,8 @@ export async function runOperation({
   uploadSlug,
 }: BackupOperationArgs): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const archiveStream = fs.createWriteStream(tempFileInfos.archive.path)
-    const logStream = fs.createWriteStream(tempFileInfos.logs.path, { flags: 'a' })
+    const archiveStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
+    const logStream = fs.createWriteStream(tempFileInfos.logsFileInfo.path, { flags: 'a' })
 
     const command = commandMap[databasePackageMap.mongodb].backup
 
@@ -51,7 +51,7 @@ export async function runOperation({
       }
 
       try {
-        const fileBuffer = await fs.promises.readFile(tempFileInfos.archive.path)
+        const fileBuffer = await fs.promises.readFile(tempFileInfos.archiveFileInfo.path)
         resolve(fileBuffer)
       } catch (_err) {
         const err = _err as Error

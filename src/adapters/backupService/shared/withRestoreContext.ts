@@ -38,7 +38,6 @@ export async function withRestoreContext({
     operation,
     payload,
   })
-  const { logs: logFileInfo } = tempFileInfos
 
   const connectionString = getConnectionString({ payload })
   const dbName = getDBName({ payload })
@@ -82,9 +81,9 @@ export async function withRestoreContext({
 
   let logsBuffer: Buffer | undefined = undefined
   try {
-    logsBuffer = await fs.promises.readFile(logFileInfo.path)
+    logsBuffer = await fs.promises.readFile(tempFileInfos.logsFileInfo.path)
   } catch (_err) {
-    payload.logger.warn(_err, `Failed to read log file: ${logFileInfo.path}`)
+    payload.logger.warn(_err, `Failed to read log file: ${tempFileInfos.logsFileInfo.path}`)
   }
 
   let logsDoc: PayloadDoc | undefined = undefined
@@ -94,7 +93,7 @@ export async function withRestoreContext({
         collection: uploadSlug,
         data: {},
         file: {
-          name: logFileInfo.filename,
+          name: tempFileInfos.logsFileInfo.filename,
           data: logsBuffer,
           mimetype: 'text/plain',
           size: logsBuffer.length,
@@ -102,7 +101,7 @@ export async function withRestoreContext({
         req,
       })
     } catch (_err) {
-      payload.logger.warn(_err, `Failed to create log file: ${logFileInfo.path}`)
+      payload.logger.warn(_err, `Failed to create log file: ${tempFileInfos.logsFileInfo.path}`)
     }
   }
 

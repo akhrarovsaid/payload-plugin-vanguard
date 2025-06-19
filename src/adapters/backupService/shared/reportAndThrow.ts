@@ -4,14 +4,12 @@ import type { PayloadDoc, TempFileInfos } from '../types.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { cleanup } from './cleanup.js'
-import { flushLogs } from './flushLogs.js'
+import { uploadLogs } from './uploadLogs.js'
 
-type Args = {
+export type ReportAndThrowArgs = {
   backupDocId?: number | string
   backupLogsId?: number | string
   backupSlug: string
-  error: unknown
-  message: string
   req: PayloadRequest
   shouldCleanup?: boolean
   uploadSlug?: string
@@ -26,18 +24,23 @@ type Args = {
     }
 )
 
+type ReportAndThrowErrorData = {
+  error: unknown
+  message: string
+}
+
 export async function reportAndThrow({
   backupDocId,
   backupLogsId,
   backupSlug,
   error,
   message,
-  req: { i18n, payload },
+  req: { payload, t },
   shouldCleanup,
   shouldFlushLogs,
   tempFileInfos,
   uploadSlug,
-}: Args): Promise<never> {
+}: ReportAndThrowArgs & ReportAndThrowErrorData): Promise<never> {
   const hasBackupLogs = typeof backupLogsId !== 'undefined'
 
   const req = { payload }
@@ -49,8 +52,8 @@ export async function reportAndThrow({
     try {
       let logsDoc: PayloadDoc | undefined = undefined
       if (shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug) {
-        logsDoc = await flushLogs({
-          ...tempFileInfos.logs,
+        logsDoc = await uploadLogs({
+          ...tempFileInfos.logsFileInfo,
           payload,
           req,
           uploadSlug,
@@ -70,7 +73,7 @@ export async function reportAndThrow({
       await commitTransaction(req)
     } catch (_err) {
       await killTransaction(req)
-      payload.logger.error(_err, i18n.t('error:noFilesUploaded'))
+      payload.logger.error(_err, t('error:noFilesUploaded'))
     }
   }
 

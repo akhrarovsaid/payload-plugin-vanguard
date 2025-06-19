@@ -50,19 +50,19 @@ export async function getTempFileInfos({
   })
   const logsFilePath = path.join(os.tmpdir(), logsFileName)
 
-  const archive: TempFileInfo = {
+  const archiveFileInfo: TempFileInfo = {
     filename: archiveFileName,
     path: archiveFilePath,
   }
 
-  const logs: TempFileInfo = {
+  const logsFileInfo: TempFileInfo = {
     filename: logsFileName,
     path: logsFilePath,
   }
 
   return {
-    archive,
-    logs,
+    archiveFileInfo,
+    logsFileInfo,
   }
 }
 

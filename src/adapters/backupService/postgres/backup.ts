@@ -18,9 +18,9 @@ export async function runOperation({
   uploadSlug,
 }: BackupOperationArgs): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const rawDumpPath = tempFileInfos.archive.path.replace(/\.gz$/, '') // uncompressed temp archive file
-    const compressedStream = fs.createWriteStream(tempFileInfos.archive.path)
-    const logStream = fs.createWriteStream(tempFileInfos.logs.path, { flags: 'a' })
+    const rawDumpPath = tempFileInfos.archiveFileInfo.path.replace(/\.gz$/, '') // uncompressed temp archive file
+    const compressedStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
+    const logStream = fs.createWriteStream(tempFileInfos.logsFileInfo.path, { flags: 'a' })
 
     const excludeTables = [
       toSnakeCase(backupSlug),
@@ -67,7 +67,7 @@ export async function runOperation({
           .pipe(compressedStream)
           .on('finish', async () => {
             try {
-              const fileBuffer = await fs.promises.readFile(tempFileInfos.archive.path)
+              const fileBuffer = await fs.promises.readFile(tempFileInfos.archiveFileInfo.path)
               await fs.promises.unlink(rawDumpPath) // clean up uncompressed file
               resolve(fileBuffer)
             } catch (_err) {

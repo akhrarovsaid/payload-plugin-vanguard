@@ -15,7 +15,7 @@ export async function runOperation({
   connectionString,
   dbName,
   req: { payload },
-  tempFileInfos: { logs: logsFileInfo },
+  tempFileInfos: { logsFileInfo },
   url,
 }: RestoreOperationArgs): Promise<void> {
   const logStream = createWriteStream(logsFileInfo.path)
