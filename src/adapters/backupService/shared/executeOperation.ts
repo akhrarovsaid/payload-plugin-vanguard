@@ -10,6 +10,7 @@ type Args<OperationArgs, ReturnType> = {
   runOperation: (args: OperationArgs) => Promise<ReturnType>
 }
 
+// TODO: Translations
 export async function executeOperation<OperationArgs extends BackupRestoreArgs, ReturnType>({
   backupDocId,
   operationArgs,
@@ -19,11 +20,12 @@ export async function executeOperation<OperationArgs extends BackupRestoreArgs, 
     return runOperation(operationArgs)
   } catch (_err) {
     const { backupSlug, req, tempFileInfos, uploadSlug } = operationArgs
+    const error = _err as Error
     await reportAndThrow({
       backupDocId,
       backupSlug,
-      error: _err,
-      message: 'Backup failed: mongodump process error',
+      error,
+      message: error.message || 'Operation failed',
       req,
       shouldCleanup: true,
       shouldFlushLogs: true,
