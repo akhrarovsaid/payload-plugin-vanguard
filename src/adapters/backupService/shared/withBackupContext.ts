@@ -37,6 +37,15 @@ export async function withBackupContext({
     payload,
   })
 
+  await ensureCommandExists({ backupSlug, operation, packageName, req })
+
+  const backupDoc = await upsertBackupDoc({
+    backupSlug,
+    data: { initiatedBy: user, latestRunId: runId },
+    req,
+    user,
+  })
+
   const operationArgs = {
     backupSlug,
     connectionString,
@@ -47,15 +56,6 @@ export async function withBackupContext({
     tempFileInfos,
     uploadSlug,
   }
-
-  await ensureCommandExists({ backupSlug, operation, packageName, req })
-
-  const backupDoc = await upsertBackupDoc({
-    backupSlug,
-    data: { initiatedBy: user, latestRunId: runId },
-    req,
-    user,
-  })
 
   const buffer = await executeOperation<BackupOperationArgs, Buffer>({
     backupDocId: backupDoc?.id,
