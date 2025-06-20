@@ -48,7 +48,7 @@ export async function withBackupContext({
     uploadSlug,
   }
 
-  await ensureCommandExists({ backupSlug, packageName, req })
+  await ensureCommandExists({ backupSlug, operation, packageName, req })
 
   const backupDoc = await upsertBackupDoc({
     backupSlug,

@@ -5,6 +5,8 @@ import { platform } from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
 
+import type { OperationType } from '../../../utilities/operationType.js'
+
 import { getCommand } from './commandMap.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
@@ -35,22 +37,24 @@ export async function commandExists(cmd: string, noThrow: boolean = true): Promi
 
 export async function ensureCommandExists({
   backupSlug,
+  operation,
   packageName,
   req,
 }: {
   backupSlug: string
+  operation: OperationType
   packageName: string
   req: PayloadRequest
 }) {
-  const { backup: backupCommand } = getCommand({ packageName })
+  const command = getCommand({ packageName })[operation]
 
   try {
-    await commandExists(backupCommand, false)
+    await commandExists(command, false)
   } catch (error) {
     await reportAndThrow({
       backupSlug,
       error,
-      message: `Backup aborted: cannot execute command '${backupCommand}'`,
+      message: `Backup aborted: cannot execute command '${command}'`,
       req,
     })
   }
