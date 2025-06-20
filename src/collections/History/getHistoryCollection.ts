@@ -42,6 +42,14 @@ export const getHistoryCollection = ({
         name: 'user',
         type: 'relationship',
         admin: {
+          components: {
+            Cell: {
+              path: 'payload-plugin-vanguard/rsc#LinkCell',
+              serverProps: {
+                labelPath: 'email',
+              },
+            },
+          },
           readOnly: true,
         },
         relationTo: userSlug,
@@ -50,6 +58,11 @@ export const getHistoryCollection = ({
         name: 'method',
         type: 'select',
         admin: {
+          components: {
+            Cell: {
+              path: 'payload-plugin-vanguard/rsc#PillCell',
+            },
+          },
           readOnly: true,
         },
         defaultValue: BackupMethod.MANUAL,
@@ -59,6 +72,11 @@ export const getHistoryCollection = ({
         name: 'operation',
         type: 'select',
         admin: {
+          components: {
+            Cell: {
+              path: 'payload-plugin-vanguard/rsc#PillCell',
+            },
+          },
           readOnly: true,
         },
         defaultValue: OperationType.RESTORE,
@@ -68,6 +86,18 @@ export const getHistoryCollection = ({
         name: 'status',
         type: 'select',
         admin: {
+          components: {
+            Cell: {
+              path: 'payload-plugin-vanguard/rsc#PillCell',
+              serverProps: {
+                pillStyleMap: {
+                  [BackupStatus.FAILURE]: 'error',
+                  [BackupStatus.IN_PROGRESS]: 'warning',
+                  [BackupStatus.SUCCESS]: 'success',
+                },
+              },
+            },
+          },
           readOnly: true,
         },
         defaultValue: BackupStatus.IN_PROGRESS,
@@ -77,6 +107,14 @@ export const getHistoryCollection = ({
         name: 'logs',
         type: 'upload',
         admin: {
+          components: {
+            Cell: {
+              path: 'payload-plugin-vanguard/rsc#LinkCell',
+              serverProps: {
+                label: 'See Logs',
+              },
+            },
+          },
           readOnly: true,
         },
         relationTo: uploadSlug,

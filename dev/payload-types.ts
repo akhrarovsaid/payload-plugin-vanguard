@@ -6,24 +6,88 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+/**
+ * Supported timezones in IANA format.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supportedTimezones".
+ */
+export type SupportedTimezones =
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
+
 export interface Config {
   auth: {
     users: UserAuthOperations;
   };
+  blocks: {};
   collections: {
     posts: Post;
     media: Media;
-    'plugin-collection': PluginCollection;
+    'vanguard-backups': VanguardBackup;
+    'vanguard-files': VanguardFile;
+    'vanguard-history': VanguardHistory;
     users: User;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    'vanguard-backups': {
+      history: 'vanguard-history';
+    };
+  };
   collectionsSelect: {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
-    'plugin-collection': PluginCollectionSelect<false> | PluginCollectionSelect<true>;
+    'vanguard-backups': VanguardBackupsSelect<false> | VanguardBackupsSelect<true>;
+    'vanguard-files': VanguardFilesSelect<false> | VanguardFilesSelect<true>;
+    'vanguard-history': VanguardHistorySelect<false> | VanguardHistorySelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -67,7 +131,8 @@ export interface UserAuthOperations {
  */
 export interface Post {
   id: string;
-  addedByPlugin?: string | null;
+  title?: string | null;
+  image?: (string | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -91,12 +156,46 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection".
+ * via the `definition` "vanguard-backups".
  */
-export interface PluginCollection {
+export interface VanguardBackup {
+  id: string;
+  backup?: (string | null) | VanguardFile;
+  completedAt?: string | null;
+  initiatedBy?: (string | null) | User;
+  restoredAt?: string | null;
+  restoredBy?: (string | null) | User;
+  history?: {
+    docs?: (string | VanguardHistory)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  backupLogs?: (string | null) | VanguardFile;
+  restoreLogs?: (string | null) | VanguardFile;
+  status?: ('success' | 'failure' | 'pending') | null;
+  method?: ('manual' | 'automatic') | null;
+  latestRunId?: string | null;
+  latestRunOperation?: ('backup' | 'restore') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vanguard-files".
+ */
+export interface VanguardFile {
   id: string;
   updatedAt: string;
   createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -117,6 +216,24 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vanguard-history".
+ */
+export interface VanguardHistory {
+  id: string;
+  user?: (string | null) | User;
+  method?: ('manual' | 'automatic') | null;
+  operation?: ('backup' | 'restore') | null;
+  status?: ('success' | 'failure' | 'pending') | null;
+  logs?: (string | null) | VanguardFile;
+  runId?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  archive?: (string | null) | VanguardBackup;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -131,8 +248,16 @@ export interface PayloadLockedDocument {
         value: string | Media;
       } | null)
     | ({
-        relationTo: 'plugin-collection';
-        value: string | PluginCollection;
+        relationTo: 'vanguard-backups';
+        value: string | VanguardBackup;
+      } | null)
+    | ({
+        relationTo: 'vanguard-files';
+        value: string | VanguardFile;
+      } | null)
+    | ({
+        relationTo: 'vanguard-history';
+        value: string | VanguardHistory;
       } | null)
     | ({
         relationTo: 'users';
@@ -185,7 +310,8 @@ export interface PayloadMigration {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  addedByPlugin?: T;
+  title?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -208,10 +334,55 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection_select".
+ * via the `definition` "vanguard-backups_select".
  */
-export interface PluginCollectionSelect<T extends boolean = true> {
-  id?: T;
+export interface VanguardBackupsSelect<T extends boolean = true> {
+  backup?: T;
+  completedAt?: T;
+  initiatedBy?: T;
+  restoredAt?: T;
+  restoredBy?: T;
+  history?: T;
+  backupLogs?: T;
+  restoreLogs?: T;
+  status?: T;
+  method?: T;
+  latestRunId?: T;
+  latestRunOperation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vanguard-files_select".
+ */
+export interface VanguardFilesSelect<T extends boolean = true> {
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vanguard-history_select".
+ */
+export interface VanguardHistorySelect<T extends boolean = true> {
+  user?: T;
+  method?: T;
+  operation?: T;
+  status?: T;
+  logs?: T;
+  runId?: T;
+  startedAt?: T;
+  completedAt?: T;
+  archive?: T;
   updatedAt?: T;
   createdAt?: T;
 }

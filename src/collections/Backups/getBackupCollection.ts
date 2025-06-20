@@ -181,45 +181,54 @@ export const getBackupCollection = ({
         ],
       },
       {
-        name: 'status',
-        type: 'select',
+        type: 'group',
         admin: {
-          components: {
-            Cell: 'payload-plugin-vanguard/rsc#StatusBarCell',
+          hidden: !pluginConfig.debug,
+        },
+        fields: [
+          {
+            name: 'status',
+            type: 'select',
+            admin: {
+              components: {
+                Cell: 'payload-plugin-vanguard/rsc#StatusBarCell',
+              },
+              hidden: !pluginConfig.debug,
+              readOnly: true,
+            },
+            defaultValue: BackupStatus.IN_PROGRESS,
+            options: [BackupStatus.SUCCESS, BackupStatus.FAILURE, BackupStatus.IN_PROGRESS],
           },
-          hidden: !pluginConfig.debug,
-          readOnly: true,
-        },
-        defaultValue: BackupStatus.IN_PROGRESS,
-        options: [BackupStatus.SUCCESS, BackupStatus.FAILURE, BackupStatus.IN_PROGRESS],
-      },
-      {
-        name: 'method',
-        type: 'select',
-        admin: {
-          hidden: !pluginConfig.debug,
-          readOnly: true,
-        },
-        defaultValue: BackupMethod.MANUAL,
-        options: [BackupMethod.MANUAL, BackupMethod.AUTO],
-      },
-      {
-        name: 'latestRunId',
-        type: 'text',
-        admin: {
-          hidden: !pluginConfig.debug,
-          readOnly: true,
-        },
-      },
-      {
-        name: 'latestRunOperation',
-        type: 'select',
-        admin: {
-          hidden: !pluginConfig.debug,
-          readOnly: true,
-        },
-        defaultValue: OperationType.BACKUP,
-        options: [OperationType.BACKUP, OperationType.RESTORE],
+          {
+            name: 'method',
+            type: 'select',
+            admin: {
+              hidden: !pluginConfig.debug,
+              readOnly: true,
+            },
+            defaultValue: BackupMethod.MANUAL,
+            options: [BackupMethod.MANUAL, BackupMethod.AUTO],
+          },
+          {
+            name: 'latestRunId',
+            type: 'text',
+            admin: {
+              hidden: !pluginConfig.debug,
+              readOnly: true,
+            },
+          },
+          {
+            name: 'latestRunOperation',
+            type: 'select',
+            admin: {
+              hidden: !pluginConfig.debug,
+              readOnly: true,
+            },
+            defaultValue: OperationType.BACKUP,
+            options: [OperationType.BACKUP, OperationType.RESTORE],
+          },
+        ],
+        label: 'Debug',
       },
     ],
     hooks: {
