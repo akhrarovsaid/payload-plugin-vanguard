@@ -6,10 +6,16 @@ import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { cleanup } from './cleanup.js'
 import { uploadLogs } from './uploadLogs.js'
 
+export type FailureSeverity = {
+  logLevel: 'error' | 'info' | 'warn'
+  shouldThrow: boolean
+}
+
 export type ReportAndThrowArgs = {
   backupDocId?: number | string
   backupLogsId?: number | string
   backupSlug: string
+  falureSeverity?: FailureSeverity
   req: PayloadRequest
   shouldCleanup?: boolean
   uploadSlug?: string
@@ -29,24 +35,29 @@ type ReportAndThrowErrorData = {
   message: string
 }
 
+// TODO thread failureSeverity through to consumers
 export async function reportAndThrow({
   backupDocId,
   backupLogsId,
   backupSlug,
   error,
+  falureSeverity = { logLevel: 'error', shouldThrow: true },
   message,
   req: { payload, t },
   shouldCleanup,
   shouldFlushLogs,
   tempFileInfos,
   uploadSlug,
-}: ReportAndThrowArgs & ReportAndThrowErrorData): Promise<never> {
-  const hasBackupLogs = typeof backupLogsId !== 'undefined'
+}: ReportAndThrowArgs & ReportAndThrowErrorData): Promise<void> {
+  const { logLevel, shouldThrow } = falureSeverity
+
+  const hasBackupLogs = typeof backupLogsId === 'number' || typeof backupLogsId === 'string'
 
   const req = { payload }
   await initTransaction(req)
 
-  payload.logger.error(error, message)
+  const log = payload.logger[logLevel]
+  log(error, message)
 
   if (backupDocId) {
     try {
@@ -81,5 +92,7 @@ export async function reportAndThrow({
     await cleanup({ payload, tempFileInfos })
   }
 
-  throw new Error(message)
+  if (shouldThrow) {
+    throw new Error(message)
+  }
 }
