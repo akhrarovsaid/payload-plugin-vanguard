@@ -35,7 +35,7 @@ export async function upsertBackupDoc({
       ...rest,
       backupSlug,
       error,
-      message: 'Operation aborted: failed to upsert backup doc',
+      message: 'Operation error: failed to upsert backup doc',
       req,
     })
   }
