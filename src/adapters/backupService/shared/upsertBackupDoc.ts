@@ -1,11 +1,14 @@
 import type { JsonObject, User } from 'payload'
 
+import type { OperationType } from '../../../utilities/operationType.js'
 import type { ReportAndThrowArgs } from './reportAndThrow.js'
 
+import { capitalize } from '../../../utilities/capitalize.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 type Args = {
   data: JsonObject
+  operation: OperationType
   user: null | User
 } & ReportAndThrowArgs
 
@@ -13,6 +16,7 @@ export async function upsertBackupDoc({
   backupDocId,
   backupSlug,
   data,
+  operation,
   req,
   req: { payload },
   ...rest
@@ -35,7 +39,7 @@ export async function upsertBackupDoc({
       ...rest,
       backupSlug,
       error,
-      message: 'Operation error: failed to upsert backup doc',
+      message: `${capitalize(operation)} error: failed to upsert archive doc`,
       req,
     })
   }

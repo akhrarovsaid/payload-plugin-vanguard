@@ -7,12 +7,13 @@ import { promisify } from 'util'
 
 import type { OperationType } from '../../../utilities/operationType.js'
 
+import { capitalize } from '../../../utilities/capitalize.js'
 import { getCommand } from './commandMap.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 const execPromise = promisify(exec)
 
-export async function commandExists(cmd: string, noThrow: boolean = true): Promise<boolean> {
+export async function commandExists(cmd: string, shouldThrow: boolean = false): Promise<boolean> {
   if (typeof cmd !== 'string' || !cmd.trim()) {
     return false
   }
@@ -27,10 +28,10 @@ export async function commandExists(cmd: string, noThrow: boolean = true): Promi
       .split(/\r?\n/)
       .some((line) => path.isAbsolute(line.trim()))
   } catch (_err) {
-    if (noThrow) {
-      return false
-    } else {
+    if (shouldThrow) {
       throw _err
+    } else {
+      return false
     }
   }
 }
@@ -49,12 +50,12 @@ export async function ensureCommandExists({
   const command = getCommand({ packageName })[operation]
 
   try {
-    await commandExists(command, false)
+    await commandExists(command, true)
   } catch (error) {
     await reportAndThrow({
       backupSlug,
       error,
-      message: `Backup aborted: cannot execute command '${command}'`,
+      message: `${capitalize(operation)} aborted: cannot execute command '${command}'`,
       req,
     })
   }
