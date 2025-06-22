@@ -19,7 +19,7 @@ export async function runOperation({
   connectionString,
   historySlug,
   req: { payload },
-  tempFileInfos: { logs: logsFileInfo },
+  tempFileInfos: { logsFileInfo },
   uploadSlug,
   url,
 }: RestoreOperationArgs): Promise<void> {
