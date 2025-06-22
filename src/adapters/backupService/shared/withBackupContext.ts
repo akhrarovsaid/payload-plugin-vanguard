@@ -42,6 +42,7 @@ export async function withBackupContext({
   const backupDoc = await upsertBackupDoc({
     backupSlug,
     data: { initiatedBy: user, latestRunId: runId },
+    operation,
     req,
     user,
   })
@@ -74,6 +75,7 @@ export async function withBackupContext({
 
   const logsDoc = await uploadLogs({
     ...tempFileInfos.logsFileInfo,
+    operation,
     payload,
     req,
     uploadSlug,
@@ -93,6 +95,7 @@ export async function withBackupContext({
     backupLogsId: logsDoc?.id,
     backupSlug,
     data,
+    operation,
     req,
     shouldCleanup: true,
     shouldFlushLogs: true,

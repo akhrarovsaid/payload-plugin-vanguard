@@ -44,6 +44,7 @@ export async function withRestoreContext({
       latestRunId: runId,
       latestRunOperation: operation,
     },
+    operation,
     req,
     user,
   })
@@ -68,6 +69,7 @@ export async function withRestoreContext({
 
   const logsDoc = await uploadLogs({
     ...tempFileInfos.logsFileInfo,
+    operation,
     payload,
     req,
     uploadSlug,
@@ -85,6 +87,7 @@ export async function withRestoreContext({
       logLevel: 'warn',
       shouldThrow: false,
     },
+    operation,
     req,
     user,
   })
