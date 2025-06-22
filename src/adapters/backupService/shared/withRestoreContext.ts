@@ -1,18 +1,17 @@
-import fs from 'fs'
-
-import type { PayloadDoc, RestoreOperationContextArgs } from '../types.js'
+import type { RestoreOperationArgs, RestoreOperationContextArgs } from '../types.js'
 
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
 import { OperationType } from '../../../utilities/operationType.js'
-import { commandExists } from './commandExists.js'
-import { getCommand } from './commandMap.js'
+import { ensureCommandExists } from './commandExists.js'
+import { executeOperation } from './executeOperation.js'
 import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
+import { uploadLogs } from './uploadLogs.js'
+import { upsertBackupDoc } from './upsertBackupDoc.js'
 
-// TODO:: reportAndThrow for restores
 export async function withRestoreContext({
-  id,
+  id: backupDocId,
   backupSlug,
   historySlug,
   pluginConfig,
@@ -21,102 +20,72 @@ export async function withRestoreContext({
   runOperation,
   uploadSlug,
 }: RestoreOperationContextArgs) {
-  const packageName = payload.db.packageName
-  const { restore: restoreCommand } = getCommand({ packageName })
-  const hasCommandAccess = await commandExists(restoreCommand)
-
-  if (!hasCommandAccess) {
-    const message = `Restore aborted: command not found '${restoreCommand}'`
-    payload.logger.error(message)
-    throw new Error(message)
-  }
-
-  const { generateFilename } = pluginConfig
   const operation = OperationType.RESTORE
+  const runId = generateRunId()
+
+  const connectionString = getConnectionString({ payload })
+  const dbName = getDBName({ payload })
+
+  const { packageName } = payload.db
+  const { generateFilename } = pluginConfig
+
   const tempFileInfos = await getTempFileInfos({
     generateFilename,
     operation,
     payload,
   })
 
-  const connectionString = getConnectionString({ payload })
-  const dbName = getDBName({ payload })
-  const runId = generateRunId()
+  await ensureCommandExists({ backupSlug, operation, packageName, req })
 
-  let backupDoc: PayloadDoc
-  try {
-    backupDoc = await payload.update({
-      id,
-      collection: backupSlug,
-      data: {
-        latestRunId: runId,
-        latestRunOperation: operation,
-      },
-      req,
-    })
-  } catch (_err) {
-    const message = req.t('error:notFound')
-    payload.logger.error(_err, message)
-    throw new Error(message)
+  const backupDoc = await upsertBackupDoc({
+    backupDocId,
+    backupSlug,
+    data: {
+      latestRunId: runId,
+      latestRunOperation: operation,
+    },
+    req,
+    user,
+  })
+
+  const operationArgs = {
+    backupSlug,
+    connectionString,
+    dbName,
+    historySlug,
+    pluginConfig,
+    req,
+    tempFileInfos,
+    uploadSlug,
+    url: `${req.origin}${backupDoc?.backup.url}`,
   }
 
-  const url = `${req.origin}${backupDoc?.backup.url}`
-  try {
-    await runOperation({
-      backupSlug,
-      connectionString,
-      dbName,
-      historySlug,
-      pluginConfig,
-      req,
-      tempFileInfos,
-      uploadSlug,
-      url,
-    })
-  } catch (_err) {
-    const err = _err as Error
-    payload.logger.error(err)
-    throw new Error(err.message)
-  }
+  await executeOperation<RestoreOperationArgs, void>({
+    backupDocId: backupDoc?.id,
+    operationArgs,
+    runOperation,
+  })
 
-  let logsBuffer: Buffer | undefined = undefined
-  try {
-    logsBuffer = await fs.promises.readFile(tempFileInfos.logsFileInfo.path)
-  } catch (_err) {
-    payload.logger.warn(_err, `Failed to read log file: ${tempFileInfos.logsFileInfo.path}`)
-  }
+  const logsDoc = await uploadLogs({
+    ...tempFileInfos.logsFileInfo,
+    payload,
+    req,
+    uploadSlug,
+  })
 
-  let logsDoc: PayloadDoc | undefined = undefined
-  if (logsBuffer) {
-    try {
-      logsDoc = await payload.create({
-        collection: uploadSlug,
-        data: {},
-        file: {
-          name: tempFileInfos.logsFileInfo.filename,
-          data: logsBuffer,
-          mimetype: 'text/plain',
-          size: logsBuffer.length,
-        },
-        req,
-      })
-    } catch (_err) {
-      payload.logger.warn(_err, `Failed to create log file: ${tempFileInfos.logsFileInfo.path}`)
-    }
-  }
-
-  try {
-    await payload.update({
-      id,
-      collection: backupSlug,
-      data: {
-        restoredAt: new Date().toISOString(),
-        restoredBy: user!.id,
-        restoreLogs: logsDoc?.id,
-      },
-      req,
-    })
-  } catch (_err) {
-    payload.logger.warn(_err, `Unable to update backup doc with id: ${id} after restore.`)
-  }
+  await upsertBackupDoc({
+    backupDocId,
+    backupSlug,
+    data: {
+      restoredAt: new Date().toISOString(),
+      restoredBy: user?.id,
+      restoreLogs: logsDoc?.id,
+    },
+    falureSeverity: {
+      logLevel: 'warn',
+      shouldThrow: false,
+    },
+    req,
+    user,
+  })
 }
