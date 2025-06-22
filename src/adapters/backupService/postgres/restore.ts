@@ -9,8 +9,8 @@ import zlib from 'zlib'
 
 import type { RestoreAdapterArgs, RestoreOperationArgs } from '../types.js'
 
+import { databasePackageMap } from '../../../utilities/databasePackageMap.js'
 import { commandMap } from '../shared/commandMap.js'
-import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { resyncSequences } from '../shared/resyncSequences.js'
 import { withRestoreContext } from '../shared/withRestoreContext.js'
 

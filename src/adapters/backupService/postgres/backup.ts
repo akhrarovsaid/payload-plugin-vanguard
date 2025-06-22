@@ -4,9 +4,9 @@ import zlib from 'zlib'
 
 import type { BackupAdapterArgs, BackupOperationArgs } from '../types.js'
 
+import { databasePackageMap } from '../../../utilities/databasePackageMap.js'
 import { toSnakeCase } from '../../../utilities/toSnakeCase.js'
 import { commandMap } from '../shared/commandMap.js'
-import { databasePackageMap } from '../shared/databasePackageMap.js'
 import { withBackupContext } from '../shared/withBackupContext.js'
 
 export async function runOperation({

@@ -2,9 +2,9 @@ import type { PayloadRequest } from 'payload'
 
 import type { BackupServiceAdapter } from './types.js'
 
+import { databasePackageMap } from '../../utilities/databasePackageMap.js'
 import { mongodbAdapter } from './mongodb/index.js'
 import { postgresAdapter } from './postgres/index.js'
-import { databasePackageMap } from './shared/databasePackageMap.js'
 import { sqliteAdapter } from './sqlite/index.js'
 
 const adapterMap = {

@@ -1,4 +1,4 @@
-import { databasePackageMap } from './databasePackageMap.js'
+import { databasePackageMap } from '../../../utilities/databasePackageMap.js'
 
 export const commandMap = {
   [databasePackageMap.mongodb]: {
