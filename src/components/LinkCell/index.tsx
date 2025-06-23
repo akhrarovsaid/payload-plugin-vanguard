@@ -52,7 +52,6 @@ export const LinkCell: FC<Props> = async ({
         depth: 0,
         disableErrors: true,
       })
-      console.log(doc)
 
       if (!doc) {
         return none
