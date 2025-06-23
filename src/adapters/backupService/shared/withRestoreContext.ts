@@ -54,6 +54,7 @@ export async function withRestoreContext({
     connectionString,
     dbName,
     historySlug,
+    operation,
     pluginConfig,
     req,
     tempFileInfos,

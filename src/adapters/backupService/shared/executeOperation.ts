@@ -19,13 +19,14 @@ export async function executeOperation<OperationArgs extends BackupRestoreArgs, 
   try {
     return runOperation(operationArgs)
   } catch (_err) {
-    const { backupSlug, req, tempFileInfos, uploadSlug } = operationArgs
+    const { backupSlug, operation, req, tempFileInfos, uploadSlug } = operationArgs
     const error = _err as Error
     await reportAndThrow({
       backupDocId,
       backupSlug,
       error,
       message: error.message || 'Operation failed',
+      operation,
       req,
       shouldCleanup: true,
       shouldFlushLogs: true,

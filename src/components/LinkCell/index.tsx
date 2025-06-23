@@ -34,8 +34,10 @@ export const LinkCell: FC<Props> = async ({
     )
   }
 
+  const none = <span>{`<${i18n.t('general:none')}>`}</span>
+
   const adminRoute = payload.config.routes?.admin || '/admin'
-  const relationTo = cellData.relationTo || field.relationTo
+  const relationTo = cellData?.relationTo || field?.relationTo
   let href = '#'
   if (isUploadOrRel) {
     if (field.type === 'relationship') {
@@ -48,23 +50,34 @@ export const LinkCell: FC<Props> = async ({
         id: cellData,
         collection: relationTo,
         depth: 0,
+        disableErrors: true,
       })
+      console.log(doc)
 
-      href = doc.url
+      if (!doc) {
+        return none
+      }
+
+      href = doc?.url || '#'
     }
   }
 
-  let label = getTranslation(labelFromProps || 'See', i18n)
-  if (labelPath) {
+  let label = getTranslation(labelFromProps || '', i18n)
+  if (labelPath && relationTo) {
     const doc = await payload.findByID({
       id: cellData,
       collection: relationTo,
       depth: 0,
+      disableErrors: true,
     })
 
-    if (Object.hasOwn(doc, labelPath)) {
+    if (doc && Object.hasOwn(doc || {}, labelPath)) {
       label = doc[labelPath]
     }
+  }
+
+  if (!label) {
+    return none
   }
 
   return (

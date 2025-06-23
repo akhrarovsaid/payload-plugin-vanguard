@@ -56,6 +56,7 @@ export async function ensureCommandExists({
       backupSlug,
       error,
       message: `${capitalize(operation)} aborted: cannot execute command '${command}'`,
+      operation,
       req,
     })
   }

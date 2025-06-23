@@ -1,5 +1,6 @@
 import { commitTransaction, initTransaction, killTransaction, type PayloadRequest } from 'payload'
 
+import type { OperationType } from '../../../utilities/operationType.js'
 import type { PayloadDoc, TempFileInfos } from '../types.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
@@ -16,6 +17,7 @@ export type ReportAndThrowArgs = {
   backupLogsId?: number | string
   backupSlug: string
   falureSeverity?: FailureSeverity
+  operation: OperationType
   req: PayloadRequest
   shouldCleanup?: boolean
   uploadSlug?: string
@@ -43,6 +45,7 @@ export async function reportAndThrow({
   error,
   falureSeverity = { logLevel: 'error', shouldThrow: true },
   message,
+  operation,
   req: { payload, t },
   shouldCleanup,
   shouldFlushLogs,
@@ -65,6 +68,7 @@ export async function reportAndThrow({
       if (shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug) {
         logsDoc = await uploadLogs({
           ...tempFileInfos.logsFileInfo,
+          operation,
           payload,
           req,
           uploadSlug,

@@ -40,6 +40,7 @@ export async function upsertBackupDoc({
       backupSlug,
       error,
       message: `${capitalize(operation)} error: failed to upsert archive doc`,
+      operation,
       req,
     })
   }

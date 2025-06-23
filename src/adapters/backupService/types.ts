@@ -1,6 +1,7 @@
 import type { BasePayload, JsonObject, PayloadRequest, TypeWithID } from 'payload'
 
 import type { VanguardPluginConfig } from '../../types.js'
+import type { OperationType } from '../../utilities/operationType.js'
 
 export type OperationContextArgs<
   ContextType = unknown,
@@ -13,6 +14,7 @@ export type OperationContextArgs<
 export type BaseBackupServiceAdapterArgs = {
   backupSlug: string
   historySlug: string
+  operation: OperationType
   pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   uploadSlug: string
