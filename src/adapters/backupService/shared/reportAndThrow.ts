@@ -97,6 +97,6 @@ export async function reportAndThrow({
   }
 
   if (shouldThrow) {
-    throw new Error(message)
+    throw error
   }
 }

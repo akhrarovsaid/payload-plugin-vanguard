@@ -19,10 +19,7 @@ export async function resyncSequences({ collectionSlugs, payload }: Args) {
     try {
       await db.drizzle.execute(query)
     } catch (_err) {
-      payload.logger.warn(
-        _err,
-        `Failed to resync id sequences ${sequenceName} for ${tableName} after restore.`,
-      )
+      payload.logger.warn(_err, `Failed to resync id sequences ${sequenceName} for ${tableName}.`)
     }
   }
 }
