@@ -31,6 +31,7 @@ export async function getTempFileInfos({
 }: Args): Promise<TempFileInfos> {
   const dbName = getDBName({ payload })
   const timestamp = getUTCTimestamp()
+  const tmpDir = os.tmpdir()
 
   const archiveFileName = await generateFilename({
     dbName,
@@ -39,7 +40,7 @@ export async function getTempFileInfos({
     payload,
     timestamp,
   })
-  const archiveFilePath = path.join(os.tmpdir(), archiveFileName)
+  const archiveFilePath = path.join(tmpDir, archiveFileName)
 
   const logsFileName = await generateFilename({
     dbName,
@@ -48,7 +49,7 @@ export async function getTempFileInfos({
     payload,
     timestamp,
   })
-  const logsFilePath = path.join(os.tmpdir(), logsFileName)
+  const logsFilePath = path.join(tmpDir, logsFileName)
 
   const archiveFileInfo: TempFileInfo = {
     filename: archiveFileName,
