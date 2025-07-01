@@ -7,6 +7,7 @@ import { promisify } from 'util'
 
 import type { OperationType } from '../../../utilities/operationType.js'
 
+import { VanguardPluginError } from '../../../errors/VanguardPluginError.js'
 import { capitalize } from '../../../utilities/capitalize.js'
 import { getCommand } from './commandMap.js'
 import { reportAndThrow } from './reportAndThrow.js'
@@ -54,8 +55,10 @@ export async function ensureCommandExists({
   } catch (error) {
     await reportAndThrow({
       backupSlug,
-      error,
-      message: `${capitalize(operation)} aborted: cannot execute command '${command}'`,
+      error: new VanguardPluginError({
+        message: `${capitalize(operation)} aborted: cannot execute command '${command}'`,
+        options: { cause: error },
+      }),
       operation,
       req,
     })

@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { TempFileInfos } from '../types.js'
 
+import { UploadArchiveError } from '../../../errors/UploadArchiveError.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 type Args = {
@@ -44,8 +45,7 @@ export async function uploadArchive({
     await reportAndThrow({
       backupDocId,
       backupSlug,
-      error: _err,
-      message: t('error:problemUploadingFile'),
+      error: new UploadArchiveError({ backupSlug, options: { cause: _err } }),
       operation,
       req,
       shouldCleanup: true,

@@ -1,5 +1,6 @@
 import type { BackupOperationArgs, RestoreOperationArgs } from '../types.js'
 
+import { OperationError } from '../../../errors/OperationError.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 type BackupRestoreArgs = BackupOperationArgs | RestoreOperationArgs
@@ -24,8 +25,7 @@ export async function executeOperation<OperationArgs extends BackupRestoreArgs, 
     await reportAndThrow({
       backupDocId,
       backupSlug,
-      error,
-      message: error.message || 'Operation failed',
+      error: new OperationError({ backupSlug, operation, options: { cause: error } }),
       operation,
       req,
       shouldCleanup: true,

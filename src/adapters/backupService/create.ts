@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import type { BackupServiceAdapter } from './types.js'
 
+import { VanguardPluginError } from '../../errors/VanguardPluginError.js'
 import { databasePackageMap } from '../../utilities/databasePackageMap.js'
 import { mongodbAdapter } from './mongodb/index.js'
 import { postgresAdapter } from './postgres/index.js'
@@ -18,7 +19,7 @@ export const createBackupService = (req: PayloadRequest): BackupServiceAdapter =
   const adapter = adapterMap[packageName]
 
   if (!adapter) {
-    throw new Error(`Unsupported database adapter: ${packageName}`)
+    throw new VanguardPluginError({ message: `Unsupported database adapter: ${packageName}` })
   }
 
   return adapter
