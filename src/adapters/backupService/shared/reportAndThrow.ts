@@ -34,7 +34,7 @@ export type ReportAndThrowArgs = {
 
 type ReportAndThrowErrorData = {
   error: unknown
-  message: string
+  message?: string
 }
 
 // TODO thread failureSeverity through to consumers
@@ -59,8 +59,10 @@ export async function reportAndThrow({
   const req = { payload }
   await initTransaction(req)
 
-  const log = payload.logger[logLevel]
-  log(error, message)
+  if (message) {
+    const log = payload.logger[logLevel]
+    log(error, message)
+  }
 
   if (backupDocId) {
     try {
