@@ -27,9 +27,9 @@ export type VanguardPluginConfig = {
   debug?: boolean
   disabled?: boolean
   generateFilename?: GenerateFilenameFn
-  hooks: {
-    afterOperation: Array<VanguardAfterOperationHook>
-    beforeOperation: Array<VanguardBeforeOperationHook>
+  hooks?: {
+    afterOperation?: Array<VanguardAfterOperationHook>
+    beforeOperation?: Array<VanguardBeforeOperationHook>
   }
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideHistoryCollection?: (args: CollectionOverrideArgs) => CollectionConfig
