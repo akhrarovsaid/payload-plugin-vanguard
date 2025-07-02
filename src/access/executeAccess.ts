@@ -14,13 +14,12 @@ export async function executeAccess({
   uploadSlug: string
 }) {
   const accessResults = await getAccessResults({ req })
-  const isBackup = operation === OperationType.BACKUP
   const operationAccessResult = accessResults.collections?.[backupSlug]
   const uploadAccessResult = accessResults.collections?.[uploadSlug]
 
   const permissions = [uploadAccessResult?.create]
 
-  if (isBackup) {
+  if (operation === OperationType.BACKUP) {
     permissions.push(operationAccessResult?.create)
   } else {
     permissions.push(operationAccessResult?.update)
