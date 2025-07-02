@@ -10,6 +10,7 @@ import {
 
 import type { VanguardPluginConfig } from '../../types.js'
 
+import { executeAccess } from '../../access/executeAccess.js'
 import { createBackupService } from '../../adapters/backupService/create.js'
 import { OperationType } from '../../utilities/operationType.js'
 
@@ -42,14 +43,15 @@ export const generateRestoreHandler = ({
 
     const headers = headersWithCors({ headers: new Headers(), req })
 
-    if (!req.user) {
+    const { hasAccess, message } = await executeAccess({ backupSlug, operation, req, uploadSlug })
+    if (!hasAccess) {
       return Response.json(
-        { message: t('error:unauthorized') },
+        {
+          message,
+        },
         { headers, status: httpStatus.UNAUTHORIZED },
       )
     }
-
-    // TODO: check for 'restore' access
 
     if (!req.json) {
       const message = req.t('error:missingRequiredData')
