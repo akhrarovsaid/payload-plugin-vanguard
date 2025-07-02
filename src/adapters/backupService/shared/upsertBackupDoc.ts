@@ -1,11 +1,9 @@
 import type { JsonObject, User } from 'payload'
 
-import { UpsertBackupDocError } from 'errors/UpsertBackupDocError.js'
-
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { ReportAndThrowArgs } from './reportAndThrow.js'
 
-import { capitalize } from '../../../utilities/capitalize.js'
+import { UpsertBackupDocError } from '../../../errors/UpsertBackupDocError.js'
 import { reportAndThrow } from './reportAndThrow.js'
 
 type Args = {

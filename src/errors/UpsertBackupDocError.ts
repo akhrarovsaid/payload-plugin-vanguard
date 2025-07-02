@@ -1,9 +1,7 @@
-import type { OperationType } from 'utilities/operationType.js'
-
-import { capitalize } from 'utilities/capitalize.js'
-
+import type { OperationType } from '../utilities/operationType.js'
 import type { BaseErrorArgs } from './VanguardPluginError.js'
 
+import { capitalize } from '../utilities/capitalize.js'
 import { VanguardPluginError } from './VanguardPluginError.js'
 
 type Args = {
