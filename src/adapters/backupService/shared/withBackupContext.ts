@@ -3,7 +3,6 @@ import type { BackupOperationArgs, BackupOperationContextArgs, PayloadDoc } from
 import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
-import { OperationType } from '../../../utilities/operationType.js'
 import { cleanup } from './cleanup.js'
 import { ensureCommandExists } from './commandExists.js'
 import { executeOperation } from './executeOperation.js'
@@ -16,13 +15,13 @@ import { upsertBackupDoc } from './upsertBackupDoc.js'
 export async function withBackupContext({
   backupSlug,
   historySlug,
+  operation,
   pluginConfig,
   req: { payload, user },
   req,
   runOperation,
   uploadSlug,
 }: BackupOperationContextArgs) {
-  const operation = OperationType.BACKUP
   const runId = generateRunId()
 
   const connectionString = getConnectionString({ payload })

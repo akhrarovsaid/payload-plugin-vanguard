@@ -11,6 +11,7 @@ import {
 import type { VanguardPluginConfig } from '../../types.js'
 
 import { createBackupService } from '../../adapters/backupService/create.js'
+import { OperationType } from '../../utilities/operationType.js'
 
 export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
@@ -35,6 +36,7 @@ export const generateBackupHandler = ({
     const backupSlug = backupCollection.slug
     const historySlug = historyCollection.slug
     const uploadSlug = uploadCollection.slug
+    const operation = OperationType.BACKUP
     const t = req.t
 
     const headers = headersWithCors({ headers: new Headers(), req })
@@ -55,6 +57,7 @@ export const generateBackupHandler = ({
       const doc = await backupService.backup({
         backupSlug,
         historySlug,
+        operation,
         pluginConfig,
         req,
         uploadSlug,

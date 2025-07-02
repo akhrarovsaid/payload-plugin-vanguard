@@ -2,7 +2,6 @@ import type { RestoreOperationArgs, RestoreOperationContextArgs } from '../types
 
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
-import { OperationType } from '../../../utilities/operationType.js'
 import { ensureCommandExists } from './commandExists.js'
 import { executeOperation } from './executeOperation.js'
 import { generateRunId } from './generateRunId.js'
@@ -14,13 +13,13 @@ export async function withRestoreContext({
   id: backupDocId,
   backupSlug,
   historySlug,
+  operation,
   pluginConfig,
   req: { payload, user },
   req,
   runOperation,
   uploadSlug,
 }: RestoreOperationContextArgs) {
-  const operation = OperationType.RESTORE
   const runId = generateRunId()
 
   const connectionString = getConnectionString({ payload })

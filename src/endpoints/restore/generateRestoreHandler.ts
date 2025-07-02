@@ -11,6 +11,7 @@ import {
 import type { VanguardPluginConfig } from '../../types.js'
 
 import { createBackupService } from '../../adapters/backupService/create.js'
+import { OperationType } from '../../utilities/operationType.js'
 
 export type RestoreHandlerArgs = {
   backupCollection: CollectionConfig
@@ -35,6 +36,7 @@ export const generateRestoreHandler = ({
     const backupSlug = backupCollection.slug
     const historySlug = historyCollection.slug
     const uploadSlug = uploadCollection.slug
+    const operation = OperationType.RESTORE
     const payload = req.payload
     const t = req.t
 
@@ -69,6 +71,7 @@ export const generateRestoreHandler = ({
         id,
         backupSlug,
         historySlug,
+        operation,
         pluginConfig,
         req,
         uploadSlug,
