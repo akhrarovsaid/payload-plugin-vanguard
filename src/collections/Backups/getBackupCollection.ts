@@ -30,7 +30,7 @@ export const getBackupCollection = ({
   pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
-  const { debug, overrideBackupCollection } = pluginConfig
+  const { overrideBackupCollection } = pluginConfig
 
   const userSlug = config.admin?.user ?? defaultUserSlug
   const uploadSlug = uploadCollection.slug
@@ -44,11 +44,6 @@ export const getBackupCollection = ({
 
   let collection: CollectionConfig = {
     slug: defaultBackupSlug,
-    access: {
-      create: () => Boolean(debug),
-      delete: () => Boolean(debug),
-      update: () => Boolean(debug),
-    },
     admin: {
       components: {
         edit: {

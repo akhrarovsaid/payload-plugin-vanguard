@@ -13,11 +13,6 @@ export const getUploadCollection = ({
 
   const collection: CollectionConfig = {
     slug: defaultUploadSlug,
-    access: {
-      create: () => Boolean(debug),
-      delete: () => Boolean(debug),
-      update: () => Boolean(debug),
-    },
     admin: {
       hidden: !debug,
     },
