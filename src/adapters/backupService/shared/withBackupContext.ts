@@ -1,3 +1,5 @@
+import type { JsonObject } from 'payload'
+
 import type { BackupOperationArgs, BackupOperationContextArgs, PayloadDoc } from '../types.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
@@ -36,11 +38,24 @@ export async function withBackupContext({
     payload,
   })
 
+  let args: JsonObject = { initiatedBy: user, latestRunId: runId }
+  const beforeOperationHooks = pluginConfig.hooks?.beforeOperation
+  if (beforeOperationHooks?.length) {
+    for (const hook of beforeOperationHooks) {
+      args =
+        (await hook({
+          args,
+          operation,
+          req,
+        })) || args
+    }
+  }
+
   await ensureCommandExists({ backupSlug, operation, packageName, req })
 
   const backupDoc = await upsertBackupDoc({
     backupSlug,
-    data: { initiatedBy: user, latestRunId: runId },
+    data: args,
     operation,
     req,
     user,
@@ -91,7 +106,7 @@ export async function withBackupContext({
     status: BackupStatus.SUCCESS,
   }
 
-  return upsertBackupDoc({
+  const backupDocPromise = upsertBackupDoc({
     backupDocId: backupDoc?.id,
     backupLogsId: logsDoc?.id,
     backupSlug,
@@ -103,4 +118,17 @@ export async function withBackupContext({
     tempFileInfos,
     user,
   }) as Promise<PayloadDoc>
+
+  const afterOperationHooks = pluginConfig.hooks?.afterOperation
+  if (afterOperationHooks?.length) {
+    for (const hook of afterOperationHooks) {
+      await hook({
+        data,
+        operation,
+        req,
+      })
+    }
+  }
+
+  return backupDocPromise
 }

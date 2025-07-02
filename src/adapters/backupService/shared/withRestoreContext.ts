@@ -1,3 +1,5 @@
+import type { JsonObject } from 'payload'
+
 import type { RestoreOperationArgs, RestoreOperationContextArgs } from '../types.js'
 
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
@@ -33,6 +35,19 @@ export async function withRestoreContext({
     operation,
     payload,
   })
+
+  let args: JsonObject = { latestRunId: runId, latestRunOperation: operation }
+  const beforeOperationHooks = pluginConfig.hooks?.beforeOperation
+  if (beforeOperationHooks?.length) {
+    for (const hook of beforeOperationHooks) {
+      args =
+        (await hook({
+          args,
+          operation,
+          req,
+        })) || args
+    }
+  }
 
   await ensureCommandExists({ backupSlug, operation, packageName, req })
 
@@ -75,14 +90,16 @@ export async function withRestoreContext({
     uploadSlug,
   })
 
-  await upsertBackupDoc({
+  const data = {
+    restoredAt: new Date().toISOString(),
+    restoredBy: user?.id,
+    restoreLogs: logsDoc?.id,
+  }
+
+  const upsert = upsertBackupDoc({
     backupDocId,
     backupSlug,
-    data: {
-      restoredAt: new Date().toISOString(),
-      restoredBy: user?.id,
-      restoreLogs: logsDoc?.id,
-    },
+    data,
     falureSeverity: {
       logLevel: 'warn',
       shouldThrow: false,
@@ -91,4 +108,17 @@ export async function withRestoreContext({
     req,
     user,
   })
+
+  const afterOperationHooks = pluginConfig.hooks?.afterOperation
+  if (afterOperationHooks?.length) {
+    for (const hook of afterOperationHooks) {
+      await hook({
+        data,
+        operation,
+        req,
+      })
+    }
+  }
+
+  await upsert
 }
