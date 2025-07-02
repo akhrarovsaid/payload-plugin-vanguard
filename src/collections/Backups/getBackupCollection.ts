@@ -81,7 +81,6 @@ export const getBackupCollection = ({
         'restoredBy',
         'restoredAt',
       ],
-      hidden: !debug,
       listSearchableFields: ['createdAt', 'initiatedBy', 'restoredBy', 'status', 'method'],
       useAsTitle: 'createdAt',
     },
