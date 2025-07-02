@@ -11,11 +11,11 @@ import { getDeleteLogFilesHook } from './hooks/getDeleteLogFilesHook.js'
 
 export const getHistoryCollection = ({
   config,
-  pluginConfig,
+  pluginConfig = {},
   uploadCollection,
 }: {
   config: Config
-  pluginConfig: VanguardPluginConfig
+  pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
   const { debug, overrideHistoryCollection } = pluginConfig

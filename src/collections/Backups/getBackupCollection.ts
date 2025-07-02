@@ -22,12 +22,12 @@ import { getUpdateHistoryHook } from './hooks/getUpdateHistoryHook.js'
 export const getBackupCollection = ({
   config,
   historyCollection,
-  pluginConfig,
+  pluginConfig = {},
   uploadCollection,
 }: {
   config: Config
   historyCollection: CollectionConfig
-  pluginConfig: VanguardPluginConfig
+  pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }): CollectionConfig => {
   const { debug, overrideBackupCollection } = pluginConfig

@@ -18,7 +18,7 @@ export type RestoreHandlerArgs = {
   backupCollection: CollectionConfig
   config: Config
   historyCollection: CollectionConfig
-  pluginConfig: VanguardPluginConfig
+  pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }
 
@@ -30,7 +30,7 @@ export type RestoreHandlerResponse = {
 export const generateRestoreHandler = ({
   backupCollection,
   historyCollection,
-  pluginConfig,
+  pluginConfig = {},
   uploadCollection,
 }: RestoreHandlerArgs): PayloadHandler => {
   return async (req) => {

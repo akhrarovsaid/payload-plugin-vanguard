@@ -9,7 +9,7 @@ import { getBackupEndpoint } from './endpoints/backup/getBackupEndpoint.js'
 import { getRestoreEndpoint } from './endpoints/restore/getRestoreEndpoint.js'
 
 export const vanguardPlugin =
-  (pluginConfig: VanguardPluginConfig) =>
+  (pluginConfig?: VanguardPluginConfig) =>
   (config: Config): Config => {
     if (!config.collections) {
       config.collections = []
@@ -30,7 +30,7 @@ export const vanguardPlugin =
      * If the plugin is disabled, we still want to keep added collections/fields so the database schema is consistent which is important for migrations.
      * If your plugin heavily modifies the database schema, you may want to remove this property.
      */
-    if (pluginConfig.disabled) {
+    if (pluginConfig?.disabled) {
       return config
     }
 

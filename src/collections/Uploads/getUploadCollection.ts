@@ -5,9 +5,9 @@ import type { VanguardPluginConfig } from '../../types.js'
 import { defaultUploadSlug } from '../../collections/shared.js'
 
 export const getUploadCollection = ({
-  pluginConfig,
+  pluginConfig = {},
 }: {
-  pluginConfig: VanguardPluginConfig
+  pluginConfig?: VanguardPluginConfig
 }): CollectionConfig => {
   const { debug, overrideUploadCollection } = pluginConfig
 

@@ -18,7 +18,7 @@ export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
   config: Config
   historyCollection: CollectionConfig
-  pluginConfig: VanguardPluginConfig
+  pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }
 
@@ -30,7 +30,7 @@ export type BackupHandlerResponse = {
 export const generateBackupHandler = ({
   backupCollection,
   historyCollection,
-  pluginConfig,
+  pluginConfig = {},
   uploadCollection,
 }: BackupHandlerArgs): PayloadHandler => {
   return async (req) => {
