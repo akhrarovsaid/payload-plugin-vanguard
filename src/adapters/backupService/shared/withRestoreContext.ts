@@ -1,7 +1,8 @@
-import type { JsonObject } from 'payload'
+import { runAfterOperationHooks } from 'hooks/runAfterOperationHooks.js'
 
 import type { RestoreOperationArgs, RestoreOperationContextArgs } from '../types.js'
 
+import { runBeforeOperationHooks } from '../../../hooks/runBeforeOperationHooks.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
 import { ensureCommandExists } from './commandExists.js'
@@ -36,29 +37,21 @@ export async function withRestoreContext({
     payload,
   })
 
-  let args: JsonObject = { latestRunId: runId, latestRunOperation: operation }
-  const beforeOperationHooks = pluginConfig.hooks?.beforeOperation
-  if (beforeOperationHooks?.length) {
-    for (const hook of beforeOperationHooks) {
-      args =
-        (await hook({
-          args,
-          operation,
-          req,
-        })) || args
-    }
-  }
+  const args = await runBeforeOperationHooks({
+    args: { latestRunId: runId, latestRunOperation: operation },
+    operation,
+    pluginConfig,
+    req,
+  })
 
-  await ensureCommandExists({ backupSlug, operation, packageName, req })
+  await ensureCommandExists({ backupSlug, operation, packageName, pluginConfig, req })
 
   const backupDoc = await upsertBackupDoc({
     backupDocId,
     backupSlug,
-    data: {
-      latestRunId: runId,
-      latestRunOperation: operation,
-    },
+    data: args,
     operation,
+    pluginConfig,
     req,
     user,
   })
@@ -100,25 +93,17 @@ export async function withRestoreContext({
     backupDocId,
     backupSlug,
     data,
-    falureSeverity: {
+    failureSeverity: {
       logLevel: 'warn',
       shouldThrow: false,
     },
     operation,
+    pluginConfig,
     req,
     user,
   })
 
-  const afterOperationHooks = pluginConfig.hooks?.afterOperation
-  if (afterOperationHooks?.length) {
-    for (const hook of afterOperationHooks) {
-      await hook({
-        data,
-        operation,
-        req,
-      })
-    }
-  }
+  await runAfterOperationHooks({ data, operation, pluginConfig, req })
 
   await upsert
 }

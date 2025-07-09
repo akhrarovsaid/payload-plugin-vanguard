@@ -1,5 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
+import type { VanguardPluginConfig } from '../../../types.js'
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { TempFileInfos } from '../types.js'
 
@@ -11,6 +12,7 @@ type Args = {
   backupSlug: string
   buffer?: Buffer
   operation: OperationType
+  pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   tempFileInfos: TempFileInfos
   uploadSlug: string
@@ -21,7 +23,7 @@ export async function uploadArchive({
   backupSlug,
   buffer,
   operation,
-  req: { payload, t },
+  pluginConfig,
   req,
   tempFileInfos,
   uploadSlug,
@@ -30,7 +32,7 @@ export async function uploadArchive({
     return
   }
   try {
-    return payload.create({
+    return req.payload.create({
       collection: uploadSlug,
       data: {},
       file: {
@@ -47,6 +49,7 @@ export async function uploadArchive({
       backupSlug,
       error: new UploadArchiveError({ backupSlug, options: { cause: _err } }),
       operation,
+      pluginConfig,
       req,
       shouldCleanup: true,
       shouldFlushLogs: true,

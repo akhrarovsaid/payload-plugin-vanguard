@@ -9,7 +9,7 @@ export async function cleanup({
   tempFileInfos: fileInfosFromProps,
 }: {
   payload: BasePayload
-  tempFileInfos: TempFileInfos
+  tempFileInfos?: TempFileInfos
 }) {
   const tempFileInfos = Object.values(fileInfosFromProps || {})
   for (let i = 0; i < tempFileInfos.length; i++) {

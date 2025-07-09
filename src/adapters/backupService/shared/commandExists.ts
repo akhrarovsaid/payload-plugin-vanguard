@@ -5,6 +5,7 @@ import { platform } from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
 
+import type { VanguardPluginConfig } from '../../../types.js'
 import type { OperationType } from '../../../utilities/operationType.js'
 
 import { VanguardPluginError } from '../../../errors/VanguardPluginError.js'
@@ -38,14 +39,14 @@ export async function commandExists(cmd: string, shouldThrow: boolean = false): 
 }
 
 export async function ensureCommandExists({
-  backupSlug,
   operation,
   packageName,
-  req,
+  ...rest
 }: {
   backupSlug: string
   operation: OperationType
   packageName: string
+  pluginConfig: VanguardPluginConfig
   req: PayloadRequest
 }) {
   const command = getCommand({ packageName })[operation]
@@ -54,13 +55,12 @@ export async function ensureCommandExists({
     await commandExists(command, true)
   } catch (error) {
     await reportAndThrow({
-      backupSlug,
+      ...rest,
       error: new VanguardPluginError({
         message: `${capitalize(operation)} aborted: cannot execute command '${command}'`,
         options: { cause: error },
       }),
       operation,
-      req,
     })
   }
 }

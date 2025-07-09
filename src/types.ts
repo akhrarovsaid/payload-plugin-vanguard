@@ -1,4 +1,4 @@
-import type { CollectionConfig, JsonObject, PayloadRequest, TypeWithID } from 'payload'
+import type { CollectionConfig, JsonObject, PayloadRequest, TaskConfig, TypeWithID } from 'payload'
 
 import type { GenerateFilenameFn } from './adapters/backupService/types.js'
 import type { OperationType } from './utilities/operationType.js'
@@ -23,14 +23,29 @@ export type VanguardAfterOperationArgs = {
 }
 export type VanguardAfterOperationHook = (args: VanguardAfterOperationArgs) => Promise<void> | void
 
+export type VanguardErrorHookArgs = {
+  error: unknown
+  operation: OperationType
+  req: PayloadRequest
+}
+export type VanguardBeforeErrorHook = (args: VanguardErrorHookArgs) => Promise<void> | void
+export type VanguardAfterErrorHook = (args: VanguardErrorHookArgs) => Promise<void> | void
+
 export type VanguardPluginConfig = {
   debug?: boolean
   disabled?: boolean
   generateFilename?: GenerateFilenameFn
   hooks?: {
+    afterError?: Array<VanguardAfterErrorHook>
     afterOperation?: Array<VanguardAfterOperationHook>
+    beforeError?: Array<VanguardBeforeErrorHook>
     beforeOperation?: Array<VanguardBeforeOperationHook>
   }
+  jobs?:
+    | {
+        overrideBackupTask?: (args: TaskConfig) => TaskConfig
+      }
+    | boolean
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideHistoryCollection?: (args: CollectionOverrideArgs) => CollectionConfig
   overrideUploadCollection?: (args: CollectionOverrideArgs) => CollectionConfig

@@ -1,11 +1,13 @@
+import { runBeforeErrorHooks } from 'hooks/runErrorHooks.js'
 import { commitTransaction, initTransaction, killTransaction, type PayloadRequest } from 'payload'
 
+import type { VanguardPluginConfig } from '../../../types.js'
 import type { OperationType } from '../../../utilities/operationType.js'
-import type { PayloadDoc, TempFileInfos } from '../types.js'
+import type { TempFileInfos } from '../types.js'
 
-import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { cleanup } from './cleanup.js'
-import { uploadLogs } from './uploadLogs.js'
+import { logMessage } from './logMessage.js'
+import { reportBackupStatus } from './reportBackupStatus.js'
 
 export type FailureSeverity = {
   logLevel: 'error' | 'info' | 'warn'
@@ -16,8 +18,9 @@ export type ReportAndThrowArgs = {
   backupDocId?: number | string
   backupLogsId?: number | string
   backupSlug: string
-  falureSeverity?: FailureSeverity
+  failureSeverity?: FailureSeverity
   operation: OperationType
+  pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   shouldCleanup?: boolean
   uploadSlug?: string
@@ -37,68 +40,57 @@ type ReportAndThrowErrorData = {
   message?: string
 }
 
-// TODO thread failureSeverity through to consumers
+const defaultSeverity: FailureSeverity = {
+  logLevel: 'error',
+  shouldThrow: true,
+}
+
 export async function reportAndThrow({
   backupDocId,
   backupLogsId,
   backupSlug,
   error,
-  falureSeverity = { logLevel: 'error', shouldThrow: true },
+  failureSeverity = defaultSeverity,
   message,
   operation,
+  pluginConfig,
   req: { payload, t },
+  req: reqFromProps,
   shouldCleanup,
   shouldFlushLogs,
   tempFileInfos,
   uploadSlug,
 }: ReportAndThrowArgs & ReportAndThrowErrorData): Promise<void> {
-  const { logLevel, shouldThrow } = falureSeverity
-
-  const hasBackupLogs = typeof backupLogsId === 'number' || typeof backupLogsId === 'string'
-
   const req = { payload }
   await initTransaction(req)
 
-  if (message) {
-    const log = payload.logger[logLevel]
-    log(error, message)
-  }
+  logMessage({ error, failureSeverity, message, payload })
 
-  if (backupDocId) {
-    try {
-      let logsDoc: PayloadDoc | undefined = undefined
-      if (shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug) {
-        logsDoc = await uploadLogs({
-          ...tempFileInfos.logsFileInfo,
-          operation,
-          payload,
-          req,
-          uploadSlug,
-        })
-      }
+  try {
+    await reportBackupStatus({
+      backupDocId,
+      backupLogsId,
+      backupSlug,
+      operation,
+      req: reqFromProps,
+      shouldFlushLogs,
+      tempFileInfos,
+      uploadSlug,
+    })
 
-      await payload.update({
-        id: backupDocId,
-        collection: backupSlug,
-        data: {
-          backupLogs: hasBackupLogs ? backupLogsId : logsDoc?.id,
-          status: BackupStatus.FAILURE,
-        },
-        req,
-      })
+    await commitTransaction(req)
 
-      await commitTransaction(req)
-    } catch (_err) {
-      await killTransaction(req)
-      payload.logger.error(_err, t('error:noFilesUploaded'))
+    if (shouldCleanup) {
+      await cleanup({ payload, tempFileInfos })
     }
+  } catch (_err) {
+    await killTransaction(req)
+    payload.logger.error(_err, t('error:noFilesUploaded'))
+  } finally {
+    await runBeforeErrorHooks({ error, operation, pluginConfig, req: reqFromProps })
   }
 
-  if (shouldCleanup && tempFileInfos) {
-    await cleanup({ payload, tempFileInfos })
-  }
-
-  if (shouldThrow) {
+  if (failureSeverity.shouldThrow) {
     throw error
   }
 }

@@ -63,10 +63,22 @@ const buildConfigWithMemoryDB = async () => {
     db: getDatabaseAdapter(),
     editor: lexicalEditor(),
     email: testEmailAdapter,
+    jobs: {
+      autoRun: [],
+      jobsCollectionOverrides: ({ defaultJobsCollection }) => {
+        if (!defaultJobsCollection.admin) {
+          defaultJobsCollection.admin = {}
+        }
+
+        defaultJobsCollection.admin.hidden = false
+        return defaultJobsCollection
+      },
+      tasks: [],
+    },
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [vanguardPlugin({ debug: true })],
+    plugins: [vanguardPlugin()],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

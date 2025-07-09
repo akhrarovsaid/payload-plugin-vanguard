@@ -1,4 +1,5 @@
-import type { JsonObject } from 'payload'
+import { runAfterOperationHooks } from 'hooks/runAfterOperationHooks.js'
+import { runBeforeOperationHooks } from 'hooks/runBeforeOperationHooks.js'
 
 import type { BackupOperationArgs, BackupOperationContextArgs, PayloadDoc } from '../types.js'
 
@@ -38,25 +39,20 @@ export async function withBackupContext({
     payload,
   })
 
-  let args: JsonObject = { initiatedBy: user, latestRunId: runId }
-  const beforeOperationHooks = pluginConfig.hooks?.beforeOperation
-  if (beforeOperationHooks?.length) {
-    for (const hook of beforeOperationHooks) {
-      args =
-        (await hook({
-          args,
-          operation,
-          req,
-        })) || args
-    }
-  }
+  const args = await runBeforeOperationHooks({
+    args: { initiatedBy: user, latestRunId: runId },
+    operation,
+    pluginConfig,
+    req,
+  })
 
-  await ensureCommandExists({ backupSlug, operation, packageName, req })
+  await ensureCommandExists({ backupSlug, operation, packageName, pluginConfig, req })
 
   const backupDoc = await upsertBackupDoc({
     backupSlug,
     data: args,
     operation,
+    pluginConfig,
     req,
     user,
   })
@@ -84,6 +80,7 @@ export async function withBackupContext({
     backupSlug,
     buffer,
     operation,
+    pluginConfig,
     req,
     tempFileInfos,
     uploadSlug,
@@ -112,6 +109,7 @@ export async function withBackupContext({
     backupSlug,
     data,
     operation,
+    pluginConfig,
     req,
     shouldCleanup: true,
     shouldFlushLogs: true,
@@ -119,16 +117,7 @@ export async function withBackupContext({
     user,
   }) as Promise<PayloadDoc>
 
-  const afterOperationHooks = pluginConfig.hooks?.afterOperation
-  if (afterOperationHooks?.length) {
-    for (const hook of afterOperationHooks) {
-      await hook({
-        data,
-        operation,
-        req,
-      })
-    }
-  }
+  await runAfterOperationHooks({ data, operation, pluginConfig, req })
 
   return backupDocPromise
 }
