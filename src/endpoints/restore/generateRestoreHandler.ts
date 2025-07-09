@@ -12,6 +12,7 @@ import type { VanguardPluginConfig } from '../../types.js'
 
 import { executeAccess } from '../../access/executeAccess.js'
 import { createBackupService } from '../../adapters/backupService/create.js'
+import { runAfterErrorHooks } from '../../hooks/runErrorHooks.js'
 import { OperationType } from '../../utilities/operationType.js'
 
 export type RestoreHandlerArgs = {
@@ -87,10 +88,12 @@ export const generateRestoreHandler = ({
         { headers, status: httpStatus.OK },
       )
     } catch (_err) {
-      const err = _err as Error
-      payload.logger.error(err)
+      const error = _err as Error
+
+      await runAfterErrorHooks({ error, operation, pluginConfig, req })
+
       return Response.json(
-        { message: err.message },
+        { message: error.message },
         { headers, status: httpStatus.INTERNAL_SERVER_ERROR },
       )
     }
