@@ -1,4 +1,4 @@
-import type { JsonObject, User } from 'payload'
+import type { JsonObject, TypedUser } from 'payload'
 
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { ReportAndThrowArgs } from './reportAndThrow.js'
@@ -9,7 +9,7 @@ import { reportAndThrow } from './reportAndThrow.js'
 type Args = {
   data: JsonObject
   operation: OperationType
-  user: null | User
+  user: null | TypedUser
 } & ReportAndThrowArgs
 
 export async function upsertBackupDoc({
