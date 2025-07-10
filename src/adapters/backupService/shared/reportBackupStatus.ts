@@ -1,10 +1,12 @@
 import type { PayloadRequest } from 'payload'
+import type { VanguardPluginConfig } from 'types.js'
 
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { PayloadDoc, TempFileInfos } from '../types.js'
 import type { FailureSeverity } from './reportAndThrow.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
+import { capitalize } from '../../../utilities/capitalize.js'
 import { uploadLogs } from './uploadLogs.js'
 
 type Args = {
@@ -13,6 +15,7 @@ type Args = {
   backupSlug: string
   failureSeverity?: FailureSeverity
   operation: OperationType
+  pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   shouldFlushLogs?: boolean
   tempFileInfos?: TempFileInfos
@@ -21,7 +24,7 @@ type Args = {
 
 export async function reportBackupStatus({
   backupDocId,
-  backupLogsId,
+  backupLogsId: logsIdFromProps,
   backupSlug,
   operation,
   req: { payload },
@@ -30,30 +33,40 @@ export async function reportBackupStatus({
   tempFileInfos,
   uploadSlug,
 }: Args) {
-  if (!backupDocId) {
+  const hasBackupLogs = typeof logsIdFromProps === 'number' || typeof logsIdFromProps === 'string'
+  const shouldUploadLogs = shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug
+
+  const logsDoc: PayloadDoc | undefined = shouldUploadLogs
+    ? await uploadLogs({
+        ...tempFileInfos.logsFileInfo,
+        operation,
+        payload,
+        req,
+        uploadSlug,
+      })
+    : undefined
+
+  const backupLogsId = logsIdFromProps ?? logsDoc?.id
+
+  if (typeof backupDocId === 'undefined') {
     return
   }
 
-  const hasBackupLogs = typeof backupLogsId === 'number' || typeof backupLogsId === 'string'
-
-  let logsDoc: PayloadDoc | undefined = undefined
-  if (shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug) {
-    logsDoc = await uploadLogs({
-      ...tempFileInfos.logsFileInfo,
-      operation,
-      payload,
+  try {
+    await payload.update({
+      id: backupDocId,
+      collection: backupSlug,
+      data: {
+        backupLogs: backupLogsId,
+        status: BackupStatus.FAILURE,
+      },
       req,
-      uploadSlug,
     })
+  } catch (error) {
+    // TODO: Translations
+    payload.logger.warn(
+      error,
+      `${capitalize(operation)} error: unable to report ${operation} failure`,
+    )
   }
-
-  return payload.update({
-    id: backupDocId,
-    collection: backupSlug,
-    data: {
-      backupLogs: hasBackupLogs ? backupLogsId : logsDoc?.id,
-      status: BackupStatus.FAILURE,
-    },
-    req,
-  })
 }

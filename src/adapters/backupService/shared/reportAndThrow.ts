@@ -46,9 +46,6 @@ const defaultSeverity: FailureSeverity = {
 }
 
 export async function reportAndThrow({
-  backupDocId,
-  backupLogsId,
-  backupSlug,
   error,
   failureSeverity = defaultSeverity,
   message,
@@ -57,9 +54,8 @@ export async function reportAndThrow({
   req: { payload, t },
   req: reqFromProps,
   shouldCleanup,
-  shouldFlushLogs,
   tempFileInfos,
-  uploadSlug,
+  ...rest
 }: ReportAndThrowArgs & ReportAndThrowErrorData): Promise<void> {
   const req = { payload }
   await initTransaction(req)
@@ -68,14 +64,11 @@ export async function reportAndThrow({
 
   try {
     await reportBackupStatus({
-      backupDocId,
-      backupLogsId,
-      backupSlug,
       operation,
-      req: reqFromProps,
-      shouldFlushLogs,
+      pluginConfig,
+      req: { ...reqFromProps, ...req },
       tempFileInfos,
-      uploadSlug,
+      ...rest,
     })
 
     await commitTransaction(req)
@@ -86,11 +79,25 @@ export async function reportAndThrow({
   } catch (_err) {
     await killTransaction(req)
     payload.logger.error(_err, t('error:noFilesUploaded'))
-  } finally {
-    await runBeforeErrorHooks({ error, operation, pluginConfig, req: reqFromProps })
   }
 
-  if (failureSeverity.shouldThrow) {
-    throw error
+  if (!failureSeverity.shouldThrow) {
+    return
   }
+
+  const hookReq = { payload }
+  await initTransaction(hookReq)
+  try {
+    await runBeforeErrorHooks({
+      error,
+      operation,
+      pluginConfig,
+      req: { ...reqFromProps, ...hookReq },
+    })
+  } catch (_err) {
+    await killTransaction(hookReq)
+    payload.logger.error(_err, t('error:unknown'))
+  }
+
+  throw error
 }
