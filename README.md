@@ -5,7 +5,8 @@ A one-click backup and restore plugin for PayloadCMS. Compatible with any Payloa
 WIP
 
 TODO for 1.0.0:
-- [] Tests / CI (In prog.)
-- [] Make it faster / more stable / better error handling
-- [] Docs
-- [] Update ReadMe
+- [ ] Backup/Restore Job Queues tasks (In prog.)
+- [ ] Tests / CI (In prog.)
+- [ ] Make it faster / more stable / better error handling
+- [ ] Docs
+- [ ] Update ReadMe
