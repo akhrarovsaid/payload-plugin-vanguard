@@ -64,6 +64,9 @@ const buildConfigWithMemoryDB = async () => {
     editor: lexicalEditor(),
     email: testEmailAdapter,
     jobs: {
+      access: {
+        run: () => true,
+      },
       autoRun: [],
       jobsCollectionOverrides: ({ defaultJobsCollection }) => {
         if (!defaultJobsCollection.admin) {

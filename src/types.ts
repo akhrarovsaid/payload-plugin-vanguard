@@ -44,6 +44,7 @@ export type VanguardPluginConfig = {
   jobs?:
     | {
         overrideBackupTask?: (args: TaskConfig) => TaskConfig
+        
       }
     | boolean
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig
