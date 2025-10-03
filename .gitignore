@@ -40,7 +40,7 @@ yarn-error.log*
 
 # local media
 /dev/media
-/vanguard-files
+/vanguard-backups
 **/dev/sqlite/*
 
 # Playwright
