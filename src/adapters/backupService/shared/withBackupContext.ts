@@ -17,7 +17,6 @@ import { upsertBackupDoc } from './upsertBackupDoc.js'
 
 export async function withBackupContext({
   backupSlug,
-  historySlug,
   operation,
   pluginConfig,
   req: { payload, user },
@@ -40,7 +39,7 @@ export async function withBackupContext({
   })
 
   const args = await runBeforeOperationHooks({
-    args: { initiatedBy: user, latestRunId: runId },
+    args: { latestRunId: runId },
     operation,
     pluginConfig,
     req,
@@ -61,7 +60,6 @@ export async function withBackupContext({
     backupSlug,
     connectionString,
     dbName,
-    historySlug,
     operation,
     pluginConfig,
     req,

@@ -17,7 +17,6 @@ import { withRestoreContext } from '../shared/withRestoreContext.js'
 export async function runOperation({
   backupSlug,
   connectionString,
-  historySlug,
   req: { payload },
   tempFileInfos: { logsFileInfo },
   uploadSlug,
@@ -79,7 +78,7 @@ export async function runOperation({
     // Reset the sequence for vanguard collections to prevent
     // error on uploading logs/pushing history
     if (payload.db.idType !== 'uuid') {
-      await resyncSequences({ collectionSlugs: [uploadSlug, backupSlug, historySlug], payload })
+      await resyncSequences({ collectionSlugs: [uploadSlug, backupSlug], payload })
     }
   } catch (err) {
     logStream.end()

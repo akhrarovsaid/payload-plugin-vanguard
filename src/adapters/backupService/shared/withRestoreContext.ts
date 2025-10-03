@@ -15,7 +15,6 @@ import { upsertBackupDoc } from './upsertBackupDoc.js'
 export async function withRestoreContext({
   id: backupDocId,
   backupSlug,
-  historySlug,
   operation,
   pluginConfig,
   req: { payload, user },
@@ -60,7 +59,6 @@ export async function withRestoreContext({
     backupSlug,
     connectionString,
     dbName,
-    historySlug,
     operation,
     pluginConfig,
     req,
@@ -85,7 +83,6 @@ export async function withRestoreContext({
 
   const data = {
     restoredAt: new Date().toISOString(),
-    restoredBy: user?.id,
     restoreLogs: logsDoc?.id,
   }
 

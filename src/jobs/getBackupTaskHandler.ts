@@ -13,12 +13,10 @@ import { OperationType } from '../utilities/operationType.js'
 
 export function getBackupTaskHandler({
   backupSlug,
-  historySlug,
   pluginConfig,
   uploadSlug,
 }: {
   backupSlug: string
-  historySlug: string
   pluginConfig: VanguardPluginConfig
   uploadSlug: string
 }): TaskHandler<VanguardBackupTaskType> {
@@ -49,7 +47,6 @@ export function getBackupTaskHandler({
     try {
       const doc = await backupService.backup({
         backupSlug,
-        historySlug,
         operation,
         pluginConfig,
         req,

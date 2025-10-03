@@ -11,7 +11,6 @@ export async function runOperation({
   backupSlug,
   connectionString,
   dbName,
-  historySlug,
   req: { payload },
   tempFileInfos,
   uploadSlug,
@@ -28,7 +27,6 @@ export async function runOperation({
       '--archive',
       '--gzip',
       `--excludeCollection=${backupSlug}`,
-      `--excludeCollection=${historySlug}`,
       `--excludeCollection=${uploadSlug}`,
     ])
 

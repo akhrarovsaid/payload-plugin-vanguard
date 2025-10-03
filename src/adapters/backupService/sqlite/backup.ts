@@ -10,7 +10,6 @@ import { withBackupContext } from '../shared/withBackupContext.js'
 export async function runOperation({
   backupSlug,
   connectionString,
-  historySlug,
   req: { payload },
   tempFileInfos,
   uploadSlug,
@@ -20,11 +19,7 @@ export async function runOperation({
     const compressedStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
     const logStream = fs.createWriteStream(tempFileInfos.logsFileInfo.path, { flags: 'a' })
 
-    const excludeTables = [
-      toSnakeCase(backupSlug),
-      toSnakeCase(uploadSlug),
-      toSnakeCase(historySlug),
-    ]
+    const excludeTables = [toSnakeCase(backupSlug), toSnakeCase(uploadSlug)]
 
     const sqlitePath = connectionString.replace(/^sqlite:\/\//, '') // remove sqlite:// protocol if present
 

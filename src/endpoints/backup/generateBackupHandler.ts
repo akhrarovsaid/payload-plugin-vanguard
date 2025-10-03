@@ -18,7 +18,6 @@ import { OperationType } from '../../utilities/operationType.js'
 export type BackupHandlerArgs = {
   backupCollection: CollectionConfig
   config: Config
-  historyCollection: CollectionConfig
   pluginConfig?: VanguardPluginConfig
   uploadCollection: CollectionConfig
 }
@@ -30,13 +29,11 @@ export type BackupHandlerResponse = {
 
 export const generateBackupHandler = ({
   backupCollection,
-  historyCollection,
   pluginConfig = {},
   uploadCollection,
 }: BackupHandlerArgs): PayloadHandler => {
   return async (req) => {
     const backupSlug = backupCollection.slug
-    const historySlug = historyCollection.slug
     const uploadSlug = uploadCollection.slug
     const operation = OperationType.BACKUP
     const t = req.t
@@ -58,7 +55,6 @@ export const generateBackupHandler = ({
     try {
       const doc = await backupService.backup({
         backupSlug,
-        historySlug,
         operation,
         pluginConfig,
         req,

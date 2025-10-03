@@ -6,19 +6,17 @@ import { getBackupTaskHandler } from './getBackupTaskHandler.js'
 
 export function getBackupTaskConfig({
   backupSlug,
-  historySlug,
   pluginConfig: { jobs },
   pluginConfig,
   uploadSlug,
 }: {
   backupSlug: string
-  historySlug: string
   pluginConfig: VanguardPluginConfig
   uploadSlug: string
 }): TaskConfig {
   const task = {
     slug: 'vanguard-backup',
-    handler: getBackupTaskHandler({ backupSlug, historySlug, pluginConfig, uploadSlug }),
+    handler: getBackupTaskHandler({ backupSlug, pluginConfig, uploadSlug }),
   }
 
   if (typeof jobs === 'object' && typeof jobs?.overrideBackupTask === 'function') {
