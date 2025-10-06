@@ -2,13 +2,14 @@ import type { CollectionConfig } from 'payload'
 
 import type { VanguardPluginConfig } from '../../types.js'
 
-import { defaultBackupSlug } from '../../collections/shared.js'
 import { defaultBackupEndpointPath } from '../../endpoints/backup/defaults.js'
 import { defaultRestoreEndpointPath } from '../../endpoints/restore/defaults.js'
 import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
 import { UploadTypes } from '../../utilities/uploadTypes.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
+
+export const defaultBackupSlug = 'vanguard-backups'
 
 export const getBackupCollection = ({
   pluginConfig = {},
