@@ -1,7 +1,6 @@
-export { CreateBackupAction } from '../components/CreateBackupAction/index.js'
 export { LinkCell } from '../components/LinkCell/index.js'
 export { LogsField } from '../components/LogsField/index.js'
+export { OperationButton } from '../components/OperationButton/index.js'
 export { PillCell } from '../components/PillCell/index.js'
-export { RestoreButton } from '../components/RestoreButton/index.js'
 export { StatusBar } from '../components/StatusBar/index.js'
 export { StatusBarCell } from '../components/StatusBar/StatusBarCell/index.js'

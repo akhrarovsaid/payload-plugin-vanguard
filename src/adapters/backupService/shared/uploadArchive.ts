@@ -26,14 +26,13 @@ export async function uploadArchive({
   pluginConfig,
   req,
   tempFileInfos,
-  uploadSlug,
 }: Args) {
   if (!buffer) {
     return
   }
   try {
     return req.payload.create({
-      collection: uploadSlug,
+      collection: backupSlug,
       data: {},
       file: {
         name: tempFileInfos.archiveFileInfo.filename,

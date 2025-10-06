@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 import type { VanguardPluginConfig } from 'types.js'
 
 import type { OperationType } from '../../../utilities/operationType.js'
-import type { PayloadDoc, TempFileInfos } from '../types.js'
+import type { TempFileInfos } from '../types.js'
 import type { FailureSeverity } from './reportAndThrow.js'
 
 import { BackupStatus } from '../../../utilities/backupStatus.js'
@@ -19,7 +19,6 @@ type Args = {
   req: PayloadRequest
   shouldFlushLogs?: boolean
   tempFileInfos?: TempFileInfos
-  uploadSlug?: string
 }
 
 export async function reportBackupStatus({
@@ -31,22 +30,20 @@ export async function reportBackupStatus({
   req,
   shouldFlushLogs,
   tempFileInfos,
-  uploadSlug,
 }: Args) {
   const hasBackupLogs = typeof logsIdFromProps === 'number' || typeof logsIdFromProps === 'string'
-  const shouldUploadLogs = shouldFlushLogs && !hasBackupLogs && tempFileInfos && uploadSlug
+  const shouldUploadLogs = shouldFlushLogs && !hasBackupLogs && tempFileInfos
 
-  const logsDoc: PayloadDoc | undefined = shouldUploadLogs
-    ? await uploadLogs({
-        ...tempFileInfos.logsFileInfo,
-        operation,
-        payload,
-        req,
-        uploadSlug,
-      })
-    : undefined
-
-  const backupLogsId = logsIdFromProps ?? logsDoc?.id
+  if (shouldUploadLogs) {
+    await uploadLogs({
+      ...tempFileInfos.logsFileInfo,
+      backupDocId,
+      backupSlug,
+      operation,
+      payload,
+      req,
+    })
+  }
 
   if (typeof backupDocId === 'undefined') {
     return
@@ -57,7 +54,6 @@ export async function reportBackupStatus({
       id: backupDocId,
       collection: backupSlug,
       data: {
-        backupLogs: backupLogsId,
         status: BackupStatus.FAILURE,
       },
       req,

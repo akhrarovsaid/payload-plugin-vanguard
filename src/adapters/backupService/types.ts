@@ -16,7 +16,6 @@ export type BaseBackupServiceAdapterArgs = {
   operation: OperationType
   pluginConfig: VanguardPluginConfig
   req: PayloadRequest
-  uploadSlug: string
 }
 
 export type BackupAdapterArgs = BaseBackupServiceAdapterArgs

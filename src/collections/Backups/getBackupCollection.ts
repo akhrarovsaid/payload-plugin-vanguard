@@ -5,50 +5,41 @@ import type { VanguardPluginConfig } from '../../types.js'
 import { defaultBackupSlug } from '../../collections/shared.js'
 import { defaultBackupEndpointPath } from '../../endpoints/backup/defaults.js'
 import { defaultRestoreEndpointPath } from '../../endpoints/restore/defaults.js'
-import { logsField } from '../../fields/logsField.js'
 import { BackupMethod } from '../../utilities/backupMethod.js'
 import { BackupStatus } from '../../utilities/backupStatus.js'
-import { OperationType } from '../../utilities/operationType.js'
+import { UploadTypes } from '../../utilities/uploadTypes.js'
 import { getDeleteBackupFileHook } from './hooks/getDeleteBackupFileHook.js'
 
 export const getBackupCollection = ({
   pluginConfig = {},
-  uploadCollection,
 }: {
   pluginConfig?: VanguardPluginConfig
-  uploadCollection: CollectionConfig
 }): CollectionConfig => {
   const { overrideBackupCollection } = pluginConfig
-  const uploadSlug = uploadCollection.slug
+  const backupSlug = defaultBackupSlug
 
-  const deleteBackupFileHook = getDeleteBackupFileHook({ uploadSlug })
+  const deleteBackupFileHook = getDeleteBackupFileHook({ backupSlug })
 
   let collection: CollectionConfig = {
-    slug: defaultBackupSlug,
+    slug: backupSlug,
     admin: {
+      /* baseFilter: () => ({
+        type: {
+          equals: 'backup',
+        },
+      }), */
       components: {
         edit: {
           SaveButton: {
-            path: 'payload-plugin-vanguard/rsc#RestoreButton',
+            path: 'payload-plugin-vanguard/rsc#OperationButton',
             serverProps: {
-              restoreEndpointPath: pluginConfig.routes?.restore ?? defaultRestoreEndpointPath,
+              backupEndpointRoute: pluginConfig.routes?.backup ?? defaultBackupEndpointPath,
+              restoreEndpointRoute: pluginConfig.routes?.restore ?? defaultRestoreEndpointPath,
             },
           },
         },
-        views: {
-          list: {
-            actions: [
-              {
-                path: 'payload-plugin-vanguard/rsc#CreateBackupAction',
-                serverProps: {
-                  backupEndpointPath: pluginConfig.routes?.backup ?? defaultBackupEndpointPath,
-                },
-              },
-            ],
-          },
-        },
       },
-      defaultColumns: ['createdAt', 'status', 'method', 'completedAt', 'restoredAt'],
+      defaultColumns: ['createdAt', 'status', 'method'],
       listSearchableFields: ['createdAt', 'status', 'method'],
       useAsTitle: 'createdAt',
     },
@@ -65,19 +56,25 @@ export const getBackupCollection = ({
         },
       },
       {
-        name: 'backup',
-        type: 'upload',
-        admin: {
-          condition: (data) => data.backup,
-          readOnly: true,
-        },
-        relationTo: uploadSlug,
-      },
-      {
         type: 'group',
+        admin: {
+          condition: (data, _, { operation }) =>
+            data.type === UploadTypes.BACKUP && operation !== 'create',
+        },
         fields: [
-          logsField({ name: 'backupLogs', label: 'Backup Logs', uploadSlug }),
-          logsField({ name: 'restoreLogs', label: 'Restore Logs', uploadSlug }),
+          {
+            name: 'logs',
+            type: 'join',
+            admin: {
+              allowCreate: false,
+              defaultColumns: ['filename', 'size', 'mimeType', 'createdAt'],
+              disableListColumn: true,
+              disableListFilter: true,
+            },
+            collection: backupSlug,
+            label: false,
+            on: 'parent',
+          },
         ],
         label: 'Logs',
       },
@@ -111,33 +108,42 @@ export const getBackupCollection = ({
             options: [BackupMethod.MANUAL, BackupMethod.AUTO],
           },
           {
-            name: 'latestRunId',
-            type: 'text',
-            admin: {
-              hidden: !pluginConfig.debug,
-              readOnly: true,
-            },
-          },
-          {
-            name: 'latestRunOperation',
+            name: 'type',
             type: 'select',
             admin: {
               hidden: !pluginConfig.debug,
               readOnly: true,
             },
-            defaultValue: OperationType.BACKUP,
-            options: [OperationType.BACKUP, OperationType.RESTORE],
+            defaultValue: UploadTypes.BACKUP,
+            options: [UploadTypes.BACKUP, UploadTypes.LOGS],
+          },
+          {
+            name: 'parent',
+            type: 'relationship',
+            admin: {
+              hidden: !pluginConfig.debug,
+              readOnly: true,
+            },
+            relationTo: backupSlug,
           },
         ],
         label: 'Debug',
       },
     ],
     hooks: {
-      afterDelete: [deleteBackupFileHook],
+      beforeDelete: [deleteBackupFileHook],
     },
     labels: {
       plural: 'Database Backups',
       singular: 'Database Backup',
+    },
+    upload: {
+      bulkUpload: false,
+      crop: false,
+      filesRequiredOnCreate: false,
+      hideFileInputOnCreate: true,
+      hideRemoveFile: true,
+      pasteURL: false,
     },
   }
 

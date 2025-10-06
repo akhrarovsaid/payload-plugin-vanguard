@@ -9,7 +9,7 @@ import './index.scss'
 import { LogsFieldClient } from './index.client.js'
 
 type Props = {
-  uploadSlug: string
+  backupSlug: string
 } & UploadFieldServerProps
 
 const MAX_FILESIZE_KB = 200
@@ -22,6 +22,7 @@ const Wrapper = ({ children }: { children: ReactNode }) => (
 )
 
 export const LogsField: FC<Props> = async ({
+  backupSlug,
   data,
   field,
   i18n,
@@ -29,7 +30,6 @@ export const LogsField: FC<Props> = async ({
   path,
   payload,
   req,
-  uploadSlug,
 }) => {
   if (operation !== 'update') {
     return null
@@ -38,11 +38,15 @@ export const LogsField: FC<Props> = async ({
   let logsDocFromData: null | number | PayloadDoc | string | undefined = data[path]
 
   if (typeof logsDocFromData === 'string' || typeof logsDocFromData === 'number') {
-    logsDocFromData = await payload.findByID({
-      id: logsDocFromData,
-      collection: uploadSlug,
-      req,
-    })
+    try {
+      logsDocFromData = await payload.findByID({
+        id: logsDocFromData,
+        collection: backupSlug,
+        req,
+      })
+    } catch (_err) {
+      // swallow error
+    }
   }
 
   const logsDoc = logsDocFromData as PayloadDoc | undefined

@@ -1,7 +1,6 @@
-import { runAfterOperationHooks } from 'hooks/runAfterOperationHooks.js'
-
 import type { RestoreOperationArgs, RestoreOperationContextArgs } from '../types.js'
 
+import { runAfterOperationHooks } from '../../../hooks/runAfterOperationHooks.js'
 import { runBeforeOperationHooks } from '../../../hooks/runBeforeOperationHooks.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
@@ -20,7 +19,6 @@ export async function withRestoreContext({
   req: { payload, user },
   req,
   runOperation,
-  uploadSlug,
 }: RestoreOperationContextArgs) {
   const runId = generateRunId()
 
@@ -63,22 +61,22 @@ export async function withRestoreContext({
     pluginConfig,
     req,
     tempFileInfos,
-    uploadSlug,
-    url: `${req.origin}${backupDoc?.backup.url}`,
+    url: `${req.origin}${backupDoc?.url}`,
   }
 
   await executeOperation<RestoreOperationArgs, void>({
-    backupDocId: backupDoc?.id,
+    backupDocId,
     operationArgs,
     runOperation,
   })
 
   const logsDoc = await uploadLogs({
     ...tempFileInfos.logsFileInfo,
+    backupDocId,
+    backupSlug,
     operation,
     payload,
     req,
-    uploadSlug,
   })
 
   const data = {

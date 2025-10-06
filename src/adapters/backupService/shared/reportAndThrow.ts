@@ -1,10 +1,10 @@
-import { runBeforeErrorHooks } from 'hooks/runErrorHooks.js'
 import { commitTransaction, initTransaction, killTransaction, type PayloadRequest } from 'payload'
 
 import type { VanguardPluginConfig } from '../../../types.js'
 import type { OperationType } from '../../../utilities/operationType.js'
 import type { TempFileInfos } from '../types.js'
 
+import { runBeforeErrorHooks } from '../../../hooks/runErrorHooks.js'
 import { cleanup } from './cleanup.js'
 import { logMessage } from './logMessage.js'
 import { reportBackupStatus } from './reportBackupStatus.js'
@@ -23,7 +23,6 @@ export type ReportAndThrowArgs = {
   pluginConfig: VanguardPluginConfig
   req: PayloadRequest
   shouldCleanup?: boolean
-  uploadSlug?: string
 } & (
   | {
       shouldFlushLogs: true

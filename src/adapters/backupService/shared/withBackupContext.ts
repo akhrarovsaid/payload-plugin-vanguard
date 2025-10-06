@@ -1,8 +1,7 @@
-import { runAfterOperationHooks } from 'hooks/runAfterOperationHooks.js'
-import { runBeforeOperationHooks } from 'hooks/runBeforeOperationHooks.js'
-
 import type { BackupOperationArgs, BackupOperationContextArgs, PayloadDoc } from '../types.js'
 
+import { runAfterOperationHooks } from '../../../hooks/runAfterOperationHooks.js'
+import { runBeforeOperationHooks } from '../../../hooks/runBeforeOperationHooks.js'
 import { BackupStatus } from '../../../utilities/backupStatus.js'
 import { getConnectionString } from '../../../utilities/getConnectionString.js'
 import { getDBName } from '../../../utilities/getDBName.js'
@@ -11,7 +10,6 @@ import { ensureCommandExists } from './commandExists.js'
 import { executeOperation } from './executeOperation.js'
 import { generateRunId } from './generateRunId.js'
 import { getTempFileInfos } from './getTempFileInfos.js'
-import { uploadArchive } from './uploadArchive.js'
 import { uploadLogs } from './uploadLogs.js'
 import { upsertBackupDoc } from './upsertBackupDoc.js'
 
@@ -22,7 +20,6 @@ export async function withBackupContext({
   req: { payload, user },
   req,
   runOperation,
-  uploadSlug,
 }: BackupOperationContextArgs) {
   const runId = generateRunId()
 
@@ -64,7 +61,6 @@ export async function withBackupContext({
     pluginConfig,
     req,
     tempFileInfos,
-    uploadSlug,
   }
 
   const buffer = await executeOperation<BackupOperationArgs, Buffer>({
@@ -73,32 +69,27 @@ export async function withBackupContext({
     runOperation,
   })
 
-  const archiveDoc = await uploadArchive({
-    backupDocId: backupDoc?.id,
-    backupSlug,
-    buffer,
-    operation,
-    pluginConfig,
-    req,
-    tempFileInfos,
-    uploadSlug,
-  })
-
   const logsDoc = await uploadLogs({
     ...tempFileInfos.logsFileInfo,
+    backupDocId: backupDoc?.id,
+    backupSlug,
     operation,
     payload,
     req,
-    uploadSlug,
   })
 
   await cleanup({ payload, tempFileInfos })
 
   const data = {
-    backup: archiveDoc?.id,
-    backupLogs: logsDoc?.id,
     completedAt: new Date().toISOString(),
     status: BackupStatus.SUCCESS,
+  }
+
+  const file = {
+    name: tempFileInfos.archiveFileInfo.filename,
+    data: buffer as Buffer,
+    mimetype: 'application/gzip',
+    size: buffer?.length ?? 0,
   }
 
   const backupDocPromise = upsertBackupDoc({
@@ -106,6 +97,7 @@ export async function withBackupContext({
     backupLogsId: logsDoc?.id,
     backupSlug,
     data,
+    file,
     operation,
     pluginConfig,
     req,

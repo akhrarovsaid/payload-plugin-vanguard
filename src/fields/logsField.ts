@@ -2,12 +2,12 @@ import type { CollapsibleField, LabelFunction, StaticLabel } from 'payload'
 
 export function logsField({
   name,
+  backupSlug,
   label,
-  uploadSlug,
 }: {
+  backupSlug: string
   label?: LabelFunction | StaticLabel
   name: string
-  uploadSlug: string
 }): CollapsibleField {
   return {
     type: 'collapsible',
@@ -16,8 +16,8 @@ export function logsField({
         Field: {
           path: 'payload-plugin-vanguard/rsc#LogsField',
           serverProps: {
+            backupSlug,
             path: name,
-            uploadSlug,
           },
         },
       },
@@ -29,7 +29,7 @@ export function logsField({
         admin: {
           readOnly: true,
         },
-        relationTo: uploadSlug,
+        relationTo: backupSlug,
       },
     ],
     label,

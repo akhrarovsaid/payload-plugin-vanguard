@@ -1,27 +1,36 @@
-import type { CollectionAfterDeleteHook } from 'payload'
+import type { CollectionBeforeDeleteHook } from 'payload'
+
+import { UploadTypes } from '../../../utilities/uploadTypes.js'
 
 export const getDeleteBackupFileHook = ({
-  uploadSlug,
+  backupSlug,
 }: {
-  uploadSlug: string
-}): CollectionAfterDeleteHook => {
-  return async ({ doc, req }) => {
-    const backupFileId = doc.backup?.id
-    if (typeof backupFileId === 'undefined') {
-      return
-    }
-
-    const payload = req.payload
-
+  backupSlug: string
+}): CollectionBeforeDeleteHook => {
+  return async ({ id, req, req: { payload } }) => {
     try {
       await payload.delete({
-        id: backupFileId,
-        collection: uploadSlug,
+        collection: backupSlug,
+        depth: 0,
         req,
         select: {},
+        where: {
+          and: [
+            {
+              type: {
+                equals: UploadTypes.LOGS,
+              },
+            },
+            {
+              parent: {
+                equals: id,
+              },
+            },
+          ],
+        },
       })
     } catch (_err) {
-      payload.logger.error(_err, `Failed to delete backup file with id: ${backupFileId}`)
+      payload.logger.error(_err, `Failed to delete logs with parent: ${id}`)
     }
   }
 }

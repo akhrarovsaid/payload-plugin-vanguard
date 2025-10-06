@@ -19,7 +19,6 @@ export type RestoreHandlerArgs = {
   backupCollection: CollectionConfig
   config: Config
   pluginConfig?: VanguardPluginConfig
-  uploadCollection: CollectionConfig
 }
 
 export type RestoreHandlerResponse = {
@@ -30,18 +29,16 @@ export type RestoreHandlerResponse = {
 export const generateRestoreHandler = ({
   backupCollection,
   pluginConfig = {},
-  uploadCollection,
 }: RestoreHandlerArgs): PayloadHandler => {
   return async (req) => {
     const backupSlug = backupCollection.slug
-    const uploadSlug = uploadCollection.slug
     const operation = OperationType.RESTORE
     const payload = req.payload
     const t = req.t
 
     const headers = headersWithCors({ headers: new Headers(), req })
 
-    const { hasAccess, message } = await executeAccess({ backupSlug, operation, req, uploadSlug })
+    const { hasAccess, message } = await executeAccess({ backupSlug, operation, req })
     if (!hasAccess) {
       return Response.json(
         {
@@ -73,7 +70,6 @@ export const generateRestoreHandler = ({
         operation,
         pluginConfig,
         req,
-        uploadSlug,
       })
 
       return Response.json(

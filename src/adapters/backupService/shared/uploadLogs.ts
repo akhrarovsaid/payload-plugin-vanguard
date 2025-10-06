@@ -6,23 +6,26 @@ import type { OperationType } from '../../../utilities/operationType.js'
 import type { PayloadDoc } from '../types.js'
 
 import { capitalize } from '../../../utilities/capitalize.js'
+import { UploadTypes } from '../../../utilities/uploadTypes.js'
 
 type Args = {
+  backupDocId?: number | string
+  backupSlug: string
   filename: string
   operation: OperationType
   path: string
   payload: BasePayload
   req: Partial<PayloadRequest>
-  uploadSlug: string
 }
 
 export async function uploadLogs({
+  backupDocId,
+  backupSlug,
   filename,
   operation,
   path,
   payload,
   req,
-  uploadSlug,
 }: Args): Promise<PayloadDoc | undefined> {
   let logBuffer: Buffer | undefined = undefined
   try {
@@ -35,14 +38,17 @@ export async function uploadLogs({
     )
   }
 
-  if (!logBuffer) {
+  if (!logBuffer || !backupDocId) {
     return
   }
 
   try {
     return payload.create({
-      collection: uploadSlug,
-      data: {},
+      collection: backupSlug,
+      data: {
+        type: UploadTypes.LOGS,
+        parent: backupDocId,
+      },
       file: {
         name: filename,
         data: logBuffer,
