@@ -8,15 +8,13 @@ export function getBackupTaskConfig({
   backupSlug,
   pluginConfig: { jobs },
   pluginConfig,
-  uploadSlug,
 }: {
   backupSlug: string
   pluginConfig: VanguardPluginConfig
-  uploadSlug: string
 }): TaskConfig {
   const task = {
     slug: 'vanguard-backup',
-    handler: getBackupTaskHandler({ backupSlug, pluginConfig, uploadSlug }),
+    handler: getBackupTaskHandler({ backupSlug, pluginConfig }),
   }
 
   if (typeof jobs === 'object' && typeof jobs?.overrideBackupTask === 'function') {

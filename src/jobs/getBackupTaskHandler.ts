@@ -14,17 +14,15 @@ import { OperationType } from '../utilities/operationType.js'
 export function getBackupTaskHandler({
   backupSlug,
   pluginConfig,
-  uploadSlug,
 }: {
   backupSlug: string
   pluginConfig: VanguardPluginConfig
-  uploadSlug: string
 }): TaskHandler<VanguardBackupTaskType> {
   return async ({ req }: TaskHandlerArgs<VanguardBackupTaskType>) => {
     const operation = OperationType.BACKUP
 
     // TODO:: Add a bypass to this check if valid secret
-    const { hasAccess, message } = await executeAccess({ backupSlug, operation, req, uploadSlug })
+    const { hasAccess, message } = await executeAccess({ backupSlug, operation, req })
     if (!hasAccess) {
       await upsertBackupDoc({
         backupSlug,
@@ -50,7 +48,6 @@ export function getBackupTaskHandler({
         operation,
         pluginConfig,
         req,
-        uploadSlug,
       })
 
       return {
