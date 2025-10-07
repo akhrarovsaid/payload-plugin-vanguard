@@ -59,29 +59,6 @@ export const getBackupCollection = ({
       {
         type: 'group',
         admin: {
-          condition: (data, _, { operation }) =>
-            data.type === UploadTypes.BACKUP && operation !== 'create',
-        },
-        fields: [
-          {
-            name: 'logs',
-            type: 'join',
-            admin: {
-              allowCreate: false,
-              defaultColumns: ['filename', 'size', 'mimeType', 'createdAt'],
-              disableListColumn: true,
-              disableListFilter: true,
-            },
-            collection: backupSlug,
-            label: false,
-            on: 'parent',
-          },
-        ],
-        label: 'Logs',
-      },
-      {
-        type: 'group',
-        admin: {
           hidden: !pluginConfig.debug,
         },
         fields: [
@@ -151,6 +128,54 @@ export const getBackupCollection = ({
   if (typeof overrideBackupCollection === 'function') {
     collection = overrideBackupCollection({ collection })
   }
+
+  collection.fields.push(
+    {
+      type: 'group',
+      admin: {
+        condition: (data, _, { operation }) =>
+          data.type === UploadTypes.BACKUP && operation !== 'create',
+      },
+      fields: [
+        {
+          name: 'logs',
+          type: 'join',
+          admin: {
+            allowCreate: false,
+            components: {
+              Field: {
+                path: 'payload-plugin-vanguard/rsc#LogsTable',
+                serverProps: {
+                  backupSlug: collection.slug,
+                },
+              },
+            },
+            defaultColumns: ['filename', 'filesize', 'mimeType', 'createdAt'],
+            disableListColumn: true,
+            disableListFilter: true,
+          },
+          collection: collection.slug,
+          label: false,
+          on: 'parent',
+        },
+      ],
+      label: 'Logs',
+    },
+    {
+      name: 'logsViewer',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: {
+            path: 'payload-plugin-vanguard/rsc#LogsField',
+            serverProps: {
+              backupSlug: collection.slug,
+            },
+          },
+        },
+      },
+    },
+  )
 
   return collection
 }

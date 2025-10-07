@@ -70,8 +70,6 @@ export interface Config {
     posts: Post;
     media: Media;
     'vanguard-backups': VanguardBackup;
-    'vanguard-files': VanguardFile;
-    'vanguard-history': VanguardHistory;
     users: User;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -79,15 +77,13 @@ export interface Config {
   };
   collectionsJoins: {
     'vanguard-backups': {
-      history: 'vanguard-history';
+      logs: 'vanguard-backups';
     };
   };
   collectionsSelect: {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'vanguard-backups': VanguardBackupsSelect<false> | VanguardBackupsSelect<true>;
-    'vanguard-files': VanguardFilesSelect<false> | VanguardFilesSelect<true>;
-    'vanguard-history': VanguardHistorySelect<false> | VanguardHistorySelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -160,31 +156,15 @@ export interface Media {
  */
 export interface VanguardBackup {
   id: string;
-  backup?: (string | null) | VanguardFile;
-  completedAt?: string | null;
-  initiatedBy?: (string | null) | User;
-  restoredAt?: string | null;
-  restoredBy?: (string | null) | User;
-  history?: {
-    docs?: (string | VanguardHistory)[];
+  status?: ('success' | 'failure' | 'pending') | null;
+  method?: ('manual' | 'automatic') | null;
+  type?: ('backup' | 'logs') | null;
+  parent?: (string | null) | VanguardBackup;
+  logs?: {
+    docs?: (string | VanguardBackup)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  backupLogs?: (string | null) | VanguardFile;
-  restoreLogs?: (string | null) | VanguardFile;
-  status?: ('success' | 'failure' | 'pending') | null;
-  method?: ('manual' | 'automatic') | null;
-  latestRunId?: string | null;
-  latestRunOperation?: ('backup' | 'restore') | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vanguard-files".
- */
-export interface VanguardFile {
-  id: string;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -212,25 +192,14 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
   password?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vanguard-history".
- */
-export interface VanguardHistory {
-  id: string;
-  user?: (string | null) | User;
-  method?: ('manual' | 'automatic') | null;
-  operation?: ('backup' | 'restore') | null;
-  status?: ('success' | 'failure' | 'pending') | null;
-  logs?: (string | null) | VanguardFile;
-  runId?: string | null;
-  startedAt?: string | null;
-  completedAt?: string | null;
-  archive?: (string | null) | VanguardBackup;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -250,14 +219,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'vanguard-backups';
         value: string | VanguardBackup;
-      } | null)
-    | ({
-        relationTo: 'vanguard-files';
-        value: string | VanguardFile;
-      } | null)
-    | ({
-        relationTo: 'vanguard-history';
-        value: string | VanguardHistory;
       } | null)
     | ({
         relationTo: 'users';
@@ -337,26 +298,11 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "vanguard-backups_select".
  */
 export interface VanguardBackupsSelect<T extends boolean = true> {
-  backup?: T;
-  completedAt?: T;
-  initiatedBy?: T;
-  restoredAt?: T;
-  restoredBy?: T;
-  history?: T;
-  backupLogs?: T;
-  restoreLogs?: T;
   status?: T;
   method?: T;
-  latestRunId?: T;
-  latestRunOperation?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vanguard-files_select".
- */
-export interface VanguardFilesSelect<T extends boolean = true> {
+  type?: T;
+  parent?: T;
+  logs?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -368,23 +314,6 @@ export interface VanguardFilesSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "vanguard-history_select".
- */
-export interface VanguardHistorySelect<T extends boolean = true> {
-  user?: T;
-  method?: T;
-  operation?: T;
-  status?: T;
-  logs?: T;
-  runId?: T;
-  startedAt?: T;
-  completedAt?: T;
-  archive?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -400,6 +329,13 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

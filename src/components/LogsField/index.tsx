@@ -1,4 +1,4 @@
-import type { UploadFieldServerProps } from 'payload'
+import type { UIFieldServerProps } from 'payload'
 import type { FC, ReactNode } from 'react'
 
 import { getTranslation } from '@payloadcms/translations'
@@ -6,11 +6,12 @@ import { getTranslation } from '@payloadcms/translations'
 import type { PayloadDoc } from '../../types.js'
 
 import './index.scss'
+import { UploadTypes } from '../../utilities/uploadTypes.js'
 import { LogsFieldClient } from './index.client.js'
 
 type Props = {
   backupSlug: string
-} & UploadFieldServerProps
+} & UIFieldServerProps
 
 const MAX_FILESIZE_KB = 200
 const KB_SIZE = 1024
@@ -22,7 +23,6 @@ const Wrapper = ({ children }: { children: ReactNode }) => (
 )
 
 export const LogsField: FC<Props> = async ({
-  backupSlug,
   data,
   field,
   i18n,
@@ -31,25 +31,11 @@ export const LogsField: FC<Props> = async ({
   payload,
   req,
 }) => {
-  if (operation !== 'update') {
+  if (operation !== 'update' || data.type === UploadTypes.BACKUP) {
     return null
   }
 
-  let logsDocFromData: null | number | PayloadDoc | string | undefined = data[path]
-
-  if (typeof logsDocFromData === 'string' || typeof logsDocFromData === 'number') {
-    try {
-      logsDocFromData = await payload.findByID({
-        id: logsDocFromData,
-        collection: backupSlug,
-        req,
-      })
-    } catch (_err) {
-      // swallow error
-    }
-  }
-
-  const logsDoc = logsDocFromData as PayloadDoc | undefined
+  const logsDoc = data as PayloadDoc | undefined
 
   const label: string = field.label ? getTranslation(field.label, i18n) : 'Logs'
 

@@ -18,6 +18,7 @@ import type { RestoreHandlerResponse } from '../../endpoints/restore/generateRes
 
 import './index.scss'
 import { BackupStatus } from '../../utilities/backupStatus.js'
+import { UploadTypes } from '../../utilities/uploadTypes.js'
 
 const baseClass = 'vanguard-operation-btn'
 
@@ -39,7 +40,7 @@ export const OperationButtonClient = ({
   const { id, data } = useDocumentInfo()
   const router = useRouter()
   const { t } = useTranslation()
-  const { openModal } = useModal()
+  const { closeModal, openModal } = useModal()
   const pathname = usePathname()
 
   const [loading, setLoading] = useState(false)
@@ -55,6 +56,7 @@ export const OperationButtonClient = ({
     try {
       const res = await fetch(`${apiRoute}${backupEndpointRoute}`, {
         body: '{}',
+        credentials: 'include',
         method: 'POST',
       })
 
@@ -78,10 +80,13 @@ export const OperationButtonClient = ({
       return
     }
     setLoading(true)
+    closeModal(confirmRestoreModalSlug)
 
     try {
       const res = await fetch(`${apiRoute}${restoreEndpointRoute}`, {
         body: JSON.stringify({ id }),
+        cache: 'no-store',
+        credentials: 'include',
         method: 'POST',
       })
 
@@ -91,17 +96,25 @@ export const OperationButtonClient = ({
         toast.error(message)
       } else {
         toast.success(message)
-        router.refresh()
       }
     } catch (_err) {
       // swallow error
     } finally {
       setLoading(false)
+
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
     }
-  }, [loading, id, apiRoute, restoreEndpointRoute, router])
+  }, [loading, id, closeModal, apiRoute, restoreEndpointRoute])
 
   const isCreate = !id
+  const isBackup = data?.type === UploadTypes.BACKUP
   const disabled = !isCreate && data?.status !== BackupStatus.SUCCESS
+
+  if (!isBackup && !isCreate) {
+    return null
+  }
 
   return (
     <Fragment>

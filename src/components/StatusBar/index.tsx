@@ -3,15 +3,19 @@ import type { UIFieldServerProps } from 'payload'
 import { Banner } from '@payloadcms/ui'
 import { type FC, Fragment } from 'react'
 
+import { UploadTypes } from '../../utilities/uploadTypes.js'
 import { MethodPill } from './MethodPill.js'
-import { RestoredPill } from './RestoredPill.js'
 import { StatusPill } from './StatusPill.js'
 
 export const StatusBar: FC<UIFieldServerProps> = (props) => {
   const {
-    data: { method, restoredAt, restoredBy, status },
+    data: { type, method, status },
     operation,
   } = props
+
+  if (type === UploadTypes.LOGS) {
+    return null
+  }
 
   return (
     <div
@@ -27,7 +31,6 @@ export const StatusBar: FC<UIFieldServerProps> = (props) => {
         <Fragment>
           <StatusPill status={status} />
           <MethodPill method={method} />
-          <RestoredPill restored={restoredAt || restoredBy} />
         </Fragment>
       ) : (
         <Banner type="info">
