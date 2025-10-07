@@ -14,14 +14,13 @@ export async function runOperation({
   connectionString,
   req: { payload },
   tempFileInfos,
-  uploadSlug,
 }: BackupOperationArgs): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const rawDumpPath = tempFileInfos.archiveFileInfo.path.replace(/\.gz$/, '') // uncompressed temp archive file
     const compressedStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
     const logStream = fs.createWriteStream(tempFileInfos.logsFileInfo.path, { flags: 'a' })
 
-    const excludeTables = [toSnakeCase(backupSlug), toSnakeCase(uploadSlug)]
+    const excludeTables = [toSnakeCase(backupSlug)]
 
     const pgArgs = [
       `--dbname=${connectionString}`,

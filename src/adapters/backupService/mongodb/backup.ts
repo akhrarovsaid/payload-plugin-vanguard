@@ -13,7 +13,6 @@ export async function runOperation({
   dbName,
   req: { payload },
   tempFileInfos,
-  uploadSlug,
 }: BackupOperationArgs): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const archiveStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
@@ -27,7 +26,6 @@ export async function runOperation({
       '--archive',
       '--gzip',
       `--excludeCollection=${backupSlug}`,
-      `--excludeCollection=${uploadSlug}`,
     ])
 
     dumpProcess.stdout.pipe(archiveStream)

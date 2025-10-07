@@ -19,7 +19,6 @@ export async function runOperation({
   connectionString,
   req: { payload },
   tempFileInfos: { logsFileInfo },
-  uploadSlug,
   url,
 }: RestoreOperationArgs): Promise<void> {
   const logStream = createWriteStream(logsFileInfo.path)
@@ -78,7 +77,7 @@ export async function runOperation({
     // Reset the sequence for vanguard collections to prevent
     // error on uploading logs/pushing history
     if (payload.db.idType !== 'uuid') {
-      await resyncSequences({ collectionSlugs: [uploadSlug, backupSlug], payload })
+      await resyncSequences({ collectionSlugs: [backupSlug], payload })
     }
   } catch (err) {
     logStream.end()
