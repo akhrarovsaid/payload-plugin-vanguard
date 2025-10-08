@@ -1,6 +1,6 @@
 import type { CollectionConfig, JsonObject, PayloadRequest, TaskConfig, TypeWithID } from 'payload'
 
-import type { GenerateFilenameFn } from './adapters/backupService/types.js'
+import type { GenerateFilenameFn } from './adapters/backup/types.js'
 import type { OperationType } from './utilities/operationType.js'
 
 export type CollectionOverrideArgs = {
@@ -44,7 +44,6 @@ export type VanguardPluginConfig = {
   jobs?:
     | {
         overrideBackupTask?: (args: TaskConfig) => TaskConfig
-        
       }
     | boolean
   overrideBackupCollection?: (args: CollectionOverrideArgs) => CollectionConfig

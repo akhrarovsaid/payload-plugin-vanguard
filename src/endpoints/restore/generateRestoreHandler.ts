@@ -11,7 +11,7 @@ import {
 import type { VanguardPluginConfig } from '../../types.js'
 
 import { executeAccess } from '../../access/executeAccess.js'
-import { createBackupService } from '../../adapters/backupService/create.js'
+import { createBackupService } from '../../adapters/backup/create.js'
 import { runAfterErrorHooks } from '../../hooks/runErrorHooks.js'
 import { OperationType } from '../../utilities/operationType.js'
 

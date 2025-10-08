@@ -1,12 +1,12 @@
 import type { TaskHandler, TaskHandlerArgs } from 'payload'
 
-import { upsertBackupDoc } from 'adapters/backupService/shared/upsertBackupDoc.js'
+import { upsertBackupDoc } from 'adapters/backup/shared/upsertBackupDoc.js'
 
 import type { VanguardPluginConfig } from '../types.js'
 import type { VanguardBackupTaskType } from './types.js'
 
 import { executeAccess } from '../access/executeAccess.js'
-import { createBackupService } from '../adapters/backupService/create.js'
+import { createBackupService } from '../adapters/backup/create.js'
 import { runAfterErrorHooks } from '../hooks/runErrorHooks.js'
 import { BackupStatus } from '../utilities/backupStatus.js'
 import { OperationType } from '../utilities/operationType.js'
