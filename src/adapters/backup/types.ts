@@ -2,6 +2,8 @@ import type { BasePayload, JsonObject, PayloadRequest, TypeWithID } from 'payloa
 
 import type { VanguardPluginConfig } from '../../types.js'
 import type { OperationType } from '../../utilities/operationType.js'
+import type { AdapterType } from '../multipart/shared/adapterNames.js'
+import type { MultipartStorageAdapter } from '../multipart/types.js'
 
 export type OperationContextArgs<
   ContextType = unknown,
@@ -20,14 +22,20 @@ export type BaseBackupServiceAdapterArgs = {
 
 export type BackupAdapterArgs = BaseBackupServiceAdapterArgs
 export type BackupOperationArgs = {
+  adapters: { archive: MultipartStorageAdapter; logs: MultipartStorageAdapter }
   connectionString: string
   dbName: string
   tempFileInfos: TempFileInfos
 } & BaseBackupServiceAdapterArgs
+export type BackupOperationResult = {
+  archive: TempFileInfo
+  logs: TempFileInfo
+  name: AdapterType
+}
 export type BackupOperationContextArgs = OperationContextArgs<
   BackupAdapterArgs,
   BackupOperationArgs,
-  Buffer
+  BackupOperationResult
 >
 
 export type RestoreAdapterArgs = { id: number | string } & BackupAdapterArgs

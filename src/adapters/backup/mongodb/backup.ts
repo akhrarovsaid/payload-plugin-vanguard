@@ -1,23 +1,20 @@
 import { spawn } from 'child_process'
-import fs from 'fs'
 
-import type { BackupAdapterArgs, BackupOperationArgs } from '../types.js'
+import type { BackupAdapterArgs, BackupOperationArgs, BackupOperationResult } from '../types.js'
 
 import { databasePackageMap } from '../../../utilities/databasePackageMap.js'
 import { commandMap } from '../shared/commandMap.js'
 import { withBackupContext } from '../shared/withBackupContext.js'
 
 export async function runOperation({
+  adapters: { archive: archiveAdapter, logs: logsAdapter },
   backupSlug,
   connectionString,
   dbName,
   req: { payload },
   tempFileInfos,
-}: BackupOperationArgs): Promise<Buffer> {
+}: BackupOperationArgs): Promise<BackupOperationResult> {
   return new Promise((resolve, reject) => {
-    const archiveStream = fs.createWriteStream(tempFileInfos.archiveFileInfo.path)
-    const logStream = fs.createWriteStream(tempFileInfos.logsFileInfo.path, { flags: 'a' })
-
     const command = commandMap[databasePackageMap.mongodb].backup
 
     const dumpProcess = spawn(command, [
@@ -28,27 +25,73 @@ export async function runOperation({
       `--excludeCollection=${backupSlug}`,
     ])
 
-    dumpProcess.stdout.pipe(archiveStream)
-    dumpProcess.stderr.pipe(logStream)
+    /**
+     * Backup (stdout) dump to archive adapter
+     */
+    dumpProcess.stdout.on('data', async (chunk) => {
+      try {
+        await archiveAdapter.chunk(chunk)
+      } catch (_err) {
+        const err = _err as Error
+        payload.logger.error(err)
+        dumpProcess.kill()
+        await archiveAdapter.abort()
+        await logsAdapter.abort()
+        reject(err)
+      }
+    })
 
-    dumpProcess.on('error', (err) => {
+    /**
+     * Backup (stderr) logs to logs adapter
+     */
+    dumpProcess.stderr.on('data', async (chunk) => {
+      try {
+        await logsAdapter.chunk(chunk)
+      } catch (_err) {
+        const err = _err as Error
+        payload.logger.error(err)
+        dumpProcess.kill()
+        await archiveAdapter.abort()
+        await logsAdapter.abort()
+        reject(err)
+      }
+    })
+
+    /**
+     * Backup (process)
+     */
+    dumpProcess.on('error', async (err) => {
       payload.logger.error(err)
-      logStream.end()
+      dumpProcess.kill()
+      await archiveAdapter.abort()
+      await logsAdapter.abort()
       reject(err)
     })
 
     dumpProcess.on('close', async (code) => {
-      logStream.end()
-
       if (code !== 0) {
-        const err = new Error(`mongodump exited with code ${code}`)
+        const err = new Error(`${command} exited with code ${code}`)
+        await archiveAdapter.abort()
+        await logsAdapter.abort()
         payload.logger.error(err)
         return reject(err)
       }
 
       try {
-        const fileBuffer = await fs.promises.readFile(tempFileInfos.archiveFileInfo.path)
-        resolve(fileBuffer)
+        const archiveFilePath = await archiveAdapter.complete()
+        const logsFilePath = await logsAdapter.complete()
+
+        resolve({
+          name: archiveAdapter.name,
+          archive: {
+            filename: tempFileInfos.archiveFileInfo.filename,
+            path: archiveFilePath,
+          },
+          logs: {
+            filename: tempFileInfos.logsFileInfo.filename,
+            path: logsFilePath,
+          },
+        })
       } catch (_err) {
         const err = _err as Error
         payload.logger.error(err)
